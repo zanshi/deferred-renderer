@@ -1,13 +1,13 @@
 
-#include "Application.h"
+#include "Engine.h"
 
 int main(void)
 {
 
-    rengine::Application app(800, 600);
+    rengine::Engine engine(800, 600);
 
-    if (app.init()) {
-        app.run();
+    if (engine.init()) {
+        engine.run();
     }
 
     return 0;
