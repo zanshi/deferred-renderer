@@ -12,25 +12,22 @@
 
 namespace rengine {
 
-    class Mesh {
+class Mesh {
 
-    public:
-        std::vector<Vertex> vertices_;
-        std::vector<GLuint> indices_;
-        std::vector<Texture> textures_;
+public:
+//        std::vector<Vertex> vertices_;
+    std::vector<GLuint> indices_;
+    std::vector<Texture> textures_;
 
-        Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vector<Texture> textures);
+    Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vector<Texture> textures);
 
-        void draw(GLuint current_program) const;
+    void draw(GLuint current_program) const;
 
-    private:
-        /*  Render data  */
-        GLuint VAO, VBO, EBO;
+private:
+    /*  Render data  */
+    GLuint VAO_, VBO_, EBO_;
 
-        /*  Functions    */
-        void setup_mesh();
-
-    };
+};
 
 }
 

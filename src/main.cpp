@@ -6,9 +6,11 @@ int main(void)
 
     rengine::Engine engine(800, 600);
 
-    if (engine.init()) {
-        engine.run();
-    }
+    engine.start_up();
+
+    engine.run();
+
+    engine.shut_down();
 
     return 0;
 

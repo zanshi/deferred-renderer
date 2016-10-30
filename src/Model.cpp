@@ -79,12 +79,12 @@ Mesh Model::process_mesh(aiMesh* mesh, const aiScene* scene)
         vector.x = mesh->mVertices[i].x;
         vector.y = mesh->mVertices[i].y;
         vector.z = mesh->mVertices[i].z;
-        vertex.Position = vector;
+        vertex.position = vector;
         // Normals
         vector.x = mesh->mNormals[i].x;
         vector.y = mesh->mNormals[i].y;
         vector.z = mesh->mNormals[i].z;
-        vertex.Normal = vector;
+        vertex.normal = vector;
         // Texture Coordinates
         if (mesh->mTextureCoords[0]) // Does the mesh contain texture coordinates?
         {
@@ -93,10 +93,10 @@ Mesh Model::process_mesh(aiMesh* mesh, const aiScene* scene)
             // use models where a vertex can have multiple texture coordinates so we always take the first set (0).
             vec.x = mesh->mTextureCoords[0][i].x;
             vec.y = mesh->mTextureCoords[0][i].y;
-            vertex.TexCoords = vec;
+            vertex.tex_coords = vec;
         }
         else
-            vertex.TexCoords = glm::vec2(0.0f, 0.0f);
+            vertex.tex_coords = glm::vec2(0.0f, 0.0f);
         vertices.push_back(vertex);
     }
     // Now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
