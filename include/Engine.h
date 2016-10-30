@@ -24,13 +24,19 @@ namespace rengine {
 
         Engine(int width, int height);
 
+        ~Engine();
+
         void run();
 
-        bool init();
+        void start_up();
+
+        void shut_down();
 
     private:
 
         bool init_gl_context();
+
+        bool enable_gl_features();
 
         bool load_scene();
 
@@ -50,7 +56,11 @@ namespace rengine {
         int screen_width_;
         int screen_height_;
 
+        static bool instantiated_;
 
+        bool setup_camera();
+        bool compile_shaders();
     };
+
 
 }
