@@ -43,6 +43,7 @@ Mesh::Mesh(std::vector<Vertex> vertices,
 
 }
 
+// TODO improve performance
 void Mesh::draw(GLuint current_program) const
 {
     GLuint diffuseNr = 1;
