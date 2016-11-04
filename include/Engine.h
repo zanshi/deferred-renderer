@@ -18,49 +18,50 @@
 
 namespace rengine {
 
-    class Engine {
+class Engine {
 
-    public:
+public:
 
-        Engine(int width, int height);
+    Engine(int width, int height);
 
-        ~Engine();
+    ~Engine();
 
-        void run();
+    void run();
 
-        void start_up();
+    void start_up();
 
-        void shut_down();
+    void shut_down();
 
-    private:
+private:
 
-        bool init_gl_context();
+    bool init_gl_context();
 
-        bool enable_gl_features();
+    bool enable_gl_features();
 
-        bool load_scene();
+    bool load_scene();
 
-        void render_scene() const;
+    void render_scene(GLuint shader_program) const;
 
-        static void error_callback(int error, const char* description);
+    static void error_callback(int error, const char* description);
 
-        static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
-        GLFWwindow* window;
+    GLFWwindow* window;
 
-        const aiScene* scene_;
-        std::vector<Mesh> meshes_;
-        std::vector<Model> models_;
-        GLuint current_program_;
+    const aiScene* scene_;
+    std::vector<Mesh> meshes_;
+    std::vector<Model> models_;
+    GLuint current_program_;
+    const GLuint nr_lights_ = 64;
 
-        int screen_width_;
-        int screen_height_;
+    int screen_width_;
+    int screen_height_;
 
-        static bool instantiated_;
+    static bool instantiated_;
 
-        bool setup_camera();
-        bool compile_shaders();
-    };
+    bool setup_camera();
+    bool compile_shaders();
 
+};
 
 }
