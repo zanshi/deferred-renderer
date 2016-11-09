@@ -97,7 +97,7 @@ Mesh Model::process_mesh(aiMesh *mesh, const aiScene *scene) {
       indices.push_back(face.mIndices[j]);
   }
   // Process materials
-  if (mesh->mMaterialIndex >= 0) {
+  if (scene->mNumMaterials != 0) {
     aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
     // We assume a convention for sampler names in the shaders. Each diffuse texture should be named
     // as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER.
