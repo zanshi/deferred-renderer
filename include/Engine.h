@@ -15,6 +15,8 @@
 #include <vector>
 #include "Mesh.h"
 #include "Model.h"
+#include "camera.h"
+#include "GBuffer.h"
 
 namespace rengine {
 
@@ -62,6 +64,12 @@ private:
     bool setup_camera();
     bool compile_shaders();
 
+  void lighting_pass(const Camera &camera,
+                     Shader &g_lighting,
+                     const std::vector<glm::vec3> &lightPositions,
+                     const std::vector<glm::vec3> &lightColors,
+                     const rengine::GBuffer &gbuffer) const;
+  void geometry_pass(Shader &g_geometry_shader, GBuffer &gbuffer) const;
 };
 
 }
