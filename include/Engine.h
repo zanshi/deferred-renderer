@@ -47,14 +47,10 @@ namespace rengine {
 
         void render_scene(GLuint shader_program) const;
 
-
         GLFWwindow *window_;
 
-        const aiScene *scene_;
-        std::vector<Mesh> meshes_;
         std::vector<Model> models_;
-        GLuint current_program_;
-        const GLuint nr_lights_ = 64;
+//        const GLuint nr_lights_ = 64;
 
         int screen_width_;
         int screen_height_;
@@ -62,6 +58,7 @@ namespace rengine {
         static bool instantiated_;
 
         bool setup_camera();
+
         Camera camera_;
 
 
@@ -78,6 +75,8 @@ namespace rengine {
         void handle_input(float delta_time);
 
         void update_camera(GLuint ubo_transforms);
+
+        void update_lights(std::vector<glm::vec3> &light_positions, GLfloat time);
     };
 
 }
