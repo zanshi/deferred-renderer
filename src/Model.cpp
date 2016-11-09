@@ -17,13 +17,8 @@ namespace rengine {
 
 void Model::draw(GLuint current_program) const {
 
-//        std::for_each(meshes_.begin(), meshes_.end(),
-//                [shader](auto mesh) {
-//                    mesh.draw(shader);
-//                });
-
-  for (int i = 0; i < meshes_.size(); i++) {
-    meshes_[i].draw(current_program);
+  for (auto &&mesh : meshes_) {
+    mesh.draw(current_program);
   }
 
 }

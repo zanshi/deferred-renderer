@@ -145,7 +145,6 @@ void Engine::run() {
 
   // ------------------------------------------------------------------------------------
 
-
   float time;
 
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -153,75 +152,94 @@ void Engine::run() {
   while (!glfwWindowShouldClose(window)) {
 
     glfwPollEvents();
+
+
+    // INPUT
+
+    // Handle input
+
+
 //    time = static_cast<float>(glfwGetTime());
 
-//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // RENDERING
 
-    // TODO 1. Geometry pass
+    // Geometry pass
+    geometry_pass(g_geometry_shader, gbuffer);
 
-    gbuffer.use();
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // Lighting pass
+    lighting_pass(camera, g_lighting, lightPositions, lightColors, gbuffer);
 
-    g_geometry_shader.use();
-
-    // Draw the loaded model
-    glm::mat4 model;
-    model = glm::translate(model,
-                           glm::vec3(0.0f, -3.0f, 0.0f)); // Translate it down a bit so it's at the center of the scene
-    model = glm::scale(model, glm::vec3(0.25f));    // It's a bit too big for our scene, so scale it down
-    glUniformMatrix4fv(glGetUniformLocation(g_geometry_shader.program_, "model"), 1, GL_FALSE,
-                       glm::value_ptr(model));
-
-    // Render the scene. (Also binds relevant textures)
-    render_scene(g_geometry_shader.program_);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    // TODO 2. Lighting pass
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    g_lighting.use();
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, gbuffer.position_);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, gbuffer.normal_);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, gbuffer.albedo_spec_);
-
-
-    // Lights
-    // -------------------------------------------------------------------------------------------
-
-    // TODO do it more like in the OpenGL superbible, seems way more efficient
-    for (int i = 0; i < lightPositions.size(); i++) {
-
-      glUniform3fv(glGetUniformLocation(g_lighting.program_, ("lights[" + std::to_string(i) + "].Position").c_str()),
-                   1,
-                   &lightPositions[i][0]);
-      glUniform3fv(glGetUniformLocation(g_lighting.program_, ("lights[" + std::to_string(i) + "].Color").c_str()),
-                   1,
-                   &lightColors[i][0]);
-      // Update attenuation parameters and calculate radius
-      const GLfloat
-          constant = 1.0; // Note that we don't send this to the shader, we assume it is always 1.0 (in our case)
-      const GLfloat linear = 0.7;
-      const GLfloat quadratic = 1.8;
-      glUniform1f(glGetUniformLocation(g_lighting.program_,
-                                       ("lights[" + std::to_string(i) + "].Linear").c_str()), linear);
-      glUniform1f(glGetUniformLocation(g_lighting.program_,
-                                       ("lights[" + std::to_string(i) + "].Quadratic").c_str()), quadratic);
-    }
-
-    glUniform3fv(glGetUniformLocation(g_lighting.program_, "viewPos"), 1, &camera.Position[0]);
-
+    // Draw final result to screen
     quad.draw();
 
     // Swap the screen buffers
     glfwSwapBuffers(window);
   }
+
+}
+void Engine::geometry_pass(Shader &g_geometry_shader, GBuffer &gbuffer) const {
+  gbuffer.use();
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  g_geometry_shader.use();
+
+  // Draw the loaded model
+  glm::mat4 model;
+  model = translate(model,
+                    glm::vec3(0.0f, -3.0f, 0.0f)); // Translate it down a bit so it's at the center of the scene
+  model = scale(model, glm::vec3(0.25f));    // It's a bit too big for our scene, so scale it down
+  glUniformMatrix4fv(glGetUniformLocation(g_geometry_shader.program_, "model"), 1, GL_FALSE,
+                     value_ptr(model));
+
+  // Render the scene. (Also binds relevant textures)
+  render_scene(g_geometry_shader.program_);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+void Engine::lighting_pass(const Camera &camera,
+                           Shader &g_lighting,
+                           const std::vector<glm::vec3> &lightPositions,
+                           const std::vector<glm::vec3> &lightColors,
+                           const GBuffer &gbuffer) const {
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  g_lighting.use();
+
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, gbuffer.position_);
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, gbuffer.normal_);
+  glActiveTexture(GL_TEXTURE2);
+  glBindTexture(GL_TEXTURE_2D, gbuffer.albedo_spec_);
+
+
+  // Lights
+  // -------------------------------------------------------------------------------------------
+
+  // TODO do it more like in the OpenGL superbible, seems way more efficient
+  for (int i = 0; i < lightPositions.size(); i++) {
+
+    glUniform3fv(glGetUniformLocation(g_lighting.program_, ("lights[" + std::__1::to_string(i) + "].Position").c_str()),
+                 1,
+                 &lightPositions[i][0]);
+    glUniform3fv(glGetUniformLocation(g_lighting.program_, ("lights[" + std::__1::to_string(i) + "].Color").c_str()),
+                 1,
+                 &lightColors[i][0]);
+    // Update attenuation parameters and calculate radius
+    const GLfloat
+        constant = 1.0; // Note that we don't send this to the shader, we assume it is always 1.0 (in our case)
+    const GLfloat linear = 0.7;
+    const GLfloat quadratic = 1.8;
+    glUniform1f(glGetUniformLocation(g_lighting.program_,
+                                     ("lights[" + std::__1::to_string(i) + "].Linear").c_str()), linear);
+    glUniform1f(glGetUniformLocation(g_lighting.program_,
+                                     ("lights[" + std::__1::to_string(i) + "].Quadratic").c_str()), quadratic);
+  }
+
+  glUniform3fv(glGetUniformLocation(g_lighting.program_, "viewPos"), 1, &camera.Position[0]);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 }
 
