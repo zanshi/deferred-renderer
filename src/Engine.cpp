@@ -17,14 +17,13 @@
 
 namespace rengine {
 
-
-    // Callbacks
-    void error_callback(int error, const char *description);
-
-    void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
-
-
     bool Engine::instantiated_ = false;
+
+    double Engine::last_x;
+    double Engine::last_y;
+    bool Engine::keys_[1024];
+    bool Engine::first_mouse_movement_;
+
 
     Engine::Engine(int width, int height)
             : screen_width_{width}, screen_height_{height} {
@@ -320,6 +319,7 @@ namespace rengine {
         glfwSetWindowUserPointer(window_, this);
 
         glfwSetKeyCallback(window_, key_callback);
+        glfwSetCursorPosCallback(window_, mouse_callback);
 
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK) {
@@ -344,6 +344,8 @@ namespace rengine {
 
     bool Engine::setup_camera() {
         camera_ = Camera{glm::vec3(0.0f, 0.0f, 3.0f)};
+        first_mouse_movement_ = true;
+
 
         return true;
     }
@@ -396,22 +398,40 @@ namespace rengine {
 
     }
 
-    void error_callback(int error, const char *description) {
+    void Engine::error_callback(int error, const char *description) {
         fputs(description, stderr);
     }
 
-    void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    void Engine::key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
             glfwSetWindowShouldClose(window, GL_TRUE);
 
-        Engine *engine = static_cast<Engine *>(glfwGetWindowUserPointer(window));
-
         if (key >= 0 && key < 1024) {
             if (action == GLFW_PRESS)
-                engine->keys_[key] = true;
+                keys_[key] = true;
             else if (action == GLFW_RELEASE)
-                engine->keys_[key] = false;
+                keys_[key] = false;
         }
+    }
+
+    void Engine::mouse_callback(GLFWwindow* window, double xpos, double ypos)
+    {
+        Engine *engine = static_cast<Engine *>(glfwGetWindowUserPointer(window));
+
+        if (first_mouse_movement_)
+        {
+            last_x = xpos;
+            last_y = ypos;
+            first_mouse_movement_ = false;
+        }
+
+        GLfloat xoffset = static_cast<GLfloat>(xpos - last_x);
+        GLfloat yoffset = static_cast<GLfloat>(last_y - ypos);
+
+        last_x = xpos;
+        last_y = ypos;
+
+        engine->camera_.ProcessMouseMovement(xoffset, yoffset);
     }
 
 }
