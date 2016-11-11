@@ -34,8 +34,15 @@ namespace rengine {
 
         void shut_down();
 
+        // Callbacks
+        static void error_callback(int error, const char *description);
+
+        static void mouse_callback(GLFWwindow *window, double xpos, double ypos);
+
+        static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
+
         // Keys for GLFW
-        bool keys_[1024];
+
 
     private:
 
@@ -60,7 +67,10 @@ namespace rengine {
         bool setup_camera();
 
         Camera camera_;
-
+        static double last_x;
+        static double last_y;
+        static bool keys_[1024];
+        static bool first_mouse_movement_;
 
         bool compile_shaders();
 
@@ -77,6 +87,8 @@ namespace rengine {
         void update_camera(GLuint ubo_transforms);
 
         void update_lights(std::vector<glm::vec3> &light_positions, GLfloat time);
+
+
     };
 
 }
