@@ -89,6 +89,7 @@ namespace rengine {
         void update_lights(std::vector<glm::vec3> &light_positions, GLfloat time);
 
 
+        void update_window_title(const GLfloat time) const;
     };
 
 }
