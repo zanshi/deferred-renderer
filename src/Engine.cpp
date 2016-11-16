@@ -158,6 +158,8 @@ namespace rengine {
             delta_time = current_frame_time - last_frame_time;
             last_frame_time = current_frame_time;
 
+            update_window_title(current_frame_time);
+
 
             // ------------------------------------------------------
             // INPUT
@@ -432,6 +434,35 @@ namespace rengine {
         last_y = ypos;
 
         engine->camera_.ProcessMouseMovement(xoffset, yoffset);
+    }
+
+    void Engine::update_window_title(const GLfloat t) const {
+
+//        const float fps = 1000.0f / frametime;
+//        char titlestring[200];
+//        sprintf(titlestring, "Deferred renderer, %.2f ms/frame (%.1f FPS)", frametime, fps);
+//        glfwSetWindowTitle(window_, titlestring);
+
+        static double t0 = 0.0;
+        static int frames = 0;
+        static double fps = 0.0;
+        static double frametime = 0.0;
+        static char titlestring[200];
+
+        // Get current time
+//        t = glfwGetTime();  // Gets number of seconds since glfwInit()
+        // If one second has passed, or if this is the very first frame
+        if ((t - t0) > 1.0 || frames == 0) {
+            fps = (double) frames / (t - t0);
+            if (frames > 0) frametime = 1000.0 * (t - t0) / frames;
+            sprintf(titlestring, "Deferred renderer, %.2f ms/frame (%.1f FPS)", frametime, fps);
+            glfwSetWindowTitle(window_, titlestring);
+            // printf("Speed: %.1f FPS\n", fps);
+            t0 = t;
+            frames = 0;
+        }
+        frames++;
+
     }
 
 }
