@@ -78,6 +78,7 @@ namespace rengine {
         std::vector<glm::vec3> light_positions;
         std::vector<glm::vec3> light_colors;
         srand(13);
+
         for (GLuint i = 0; i < NR_LIGHTS; i++) {
             // Calculate slightly random offsets
             GLfloat xPos = ((rand() % 100) / 100.0f) * 6.0f - 3.0f;
@@ -92,9 +93,9 @@ namespace rengine {
             light_colors.push_back(glm::vec3(rColor, gColor, bColor));
         }
 
-        for (auto &&light : light_positions) {
-            std::cout << light.r << " " << light.g << " " << light.b << std::endl;
-        }
+//        for (auto &&light : light_positions) {
+//            std::cout << light.r << " " << light.g << " " << light.b << std::endl;
+//        }
 
         // Use the GBuffer geometry shader
         g_geometry_shader.use();
@@ -182,17 +183,17 @@ namespace rengine {
             // Lighting pass
             lighting_pass(camera_, g_lighting, light_positions, light_colors, gbuffer);
 
+//            postprocess_pass()
+
             // Draw final result to screen
             quad.draw();
 
             // Copy the depth buffer from the gbuffer to the default framebuffer
-            gbuffer.use();
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // Write to default framebuffer
-            glBlitFramebuffer(0, 0, screen_width_, screen_height_, 0, 0, screen_width_, screen_height_,
-                              GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
+//            gbuffer.use();
+//            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // Write to default framebuffer
+//            glBlitFramebuffer(0, 0, screen_width_, screen_height_, 0, 0, screen_width_, screen_height_,
+//                              GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+//            glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
             // Swap the screen buffers
@@ -251,9 +252,9 @@ namespace rengine {
 
         const float temp_time = glfwGetTime();
 
+
         // TODO do it more like in the OpenGL superbible, seems way more efficient
         for (int i = 0; i < lightPositions.size(); i++) {
-
             const glm::vec3 pos(lightPositions[i].x, lightPositions[i].y, lightPositions[i].z * cosf(temp_time));
             glUniform3fv(glGetUniformLocation(g_lighting.program_,
                                               ("lights[" + std::to_string(i) + "].Position").c_str()),
@@ -266,8 +267,8 @@ namespace rengine {
             // Update attenuation parameters and calculate radius
             const GLfloat
                     constant = 1.0; // Note that we don't send this to the shader, we assume it is always 1.0 (in our case)
-            const GLfloat linear = 0.7;
-            const GLfloat quadratic = 1.8;
+            const GLfloat linear = 0.22;
+            const GLfloat quadratic = 0.20;
             glUniform1f(glGetUniformLocation(g_lighting.program_,
                                              ("lights[" + std::to_string(i) + "].Linear").c_str()), linear);
             glUniform1f(glGetUniformLocation(g_lighting.program_,
@@ -283,6 +284,9 @@ namespace rengine {
     bool Engine::load_scene() {
 
         models_.push_back(Model{"../assets/models/nano/nanosuit.obj"});
+//        models_.push_back(Model{"../assets/models/blender/Blenderman.dae"});
+//        models_.push_back(Model{"../assets/models/e.dae"});
+//        models_.push_back(Model{"../assets/models/bmw/bmw.obj"});
 
         return true;
 
@@ -376,7 +380,7 @@ namespace rengine {
 
         // Set up the projection matrix and feed the data to the uniform block object
         glm::mat4 projection = glm::perspective(camera_.Zoom, (GLfloat) screen_width_ / (GLfloat) screen_height_, 0.1f,
-                                                100.0f);
+                                                1000.0f);
         glBindBuffer(GL_UNIFORM_BUFFER, ubo_transforms);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection));
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -392,6 +396,8 @@ namespace rengine {
     }
 
     void Engine::update_lights(std::vector<glm::vec3> &light_positions, GLfloat time) {
+
+//        light_positions[0] = camera_.Position;
 
 //        for(int i = 0; i < light_positions.size(); i++) {
 //            // 1 0 0
@@ -416,12 +422,10 @@ namespace rengine {
         }
     }
 
-    void Engine::mouse_callback(GLFWwindow* window, double xpos, double ypos)
-    {
+    void Engine::mouse_callback(GLFWwindow *window, double xpos, double ypos) {
         Engine *engine = static_cast<Engine *>(glfwGetWindowUserPointer(window));
 
-        if (first_mouse_movement_)
-        {
+        if (first_mouse_movement_) {
             last_x = xpos;
             last_y = ypos;
             first_mouse_movement_ = false;

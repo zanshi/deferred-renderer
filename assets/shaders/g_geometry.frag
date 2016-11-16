@@ -8,17 +8,35 @@ in VS_OUT
     vec2 TexCoords;
     vec3 FragPos;
     vec3 Normal;
+    vec3 Tangent;
+    vec3 BiTangent;
+
 } fs_in;
 
 uniform sampler2D texture_diffuse1;
 uniform sampler2D texture_specular1;
+uniform sampler2D texture_normal1;
 
 void main()
 {
+    vec3 N = normalize(fs_in.Normal);
+    vec3 T = normalize(fs_in.Tangent);
+//    vec3 B = cross(N,T);
+    vec3 B = normalize(fs_in.BiTangent);
+//    if (dot(cross(N, T), B) < 0.0) {
+//        T = T * -1.0;
+//    }
+//    vec3 B = cross(N, T);
+
+    mat3 TBN = mat3(T,B,N);
+
+    vec3 nm = texture(texture_normal1, fs_in.TexCoords).xyz * 2.0 - vec3(1.0);
+    nm = TBN * normalize(nm);
+
     // Store the fragment position vector in the first gbuffer texture
     gPosition = fs_in.FragPos;
     // Also store the per-fragment normals into the gbuffer
-    gNormal = normalize(fs_in.Normal);
+    gNormal = normalize(nm);
     // And the diffuse per-fragment color
     gAlbedoSpec.rgb = texture(texture_diffuse1, fs_in.TexCoords).rgb;
     // Store specular intensity in gAlbedoSpec's alpha component
