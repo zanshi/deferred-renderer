@@ -11,6 +11,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 #include <GBuffer.h>
 #include <Light.h>
 #include <array>
@@ -271,11 +272,17 @@ namespace rengine {
         // -------------------------------------------------------------------------------------------
 
         const float temp_time = static_cast<float>(glfwGetTime());
-
+//        const float cosrot = cosf(temp_time);
+        // Update attenuation parameters and calculate radius
+        const GLfloat linear = 0.35;
+        const GLfloat quadratic = 0.44;
 
         // TODO do it more like in the OpenGL superbible, seems way more efficient
         for (int i = 0; i < lightPositions.size(); i++) {
-            const glm::vec3 pos(lightPositions[i].x, lightPositions[i].y, lightPositions[i].z * cosf(temp_time));
+
+            const glm::vec3 pos = glm::rotateZ(lightPositions[i], temp_time);
+
+//            const glm::vec3 pos(lightPositions[i].x, lightPositions[i].y, lightPositions[i].z * rot * (i+1));
             glUniform3fv(glGetUniformLocation(lighting_shader.program_,
                                               ("lights[" + std::to_string(i) + "].Position").c_str()),
                          1,
@@ -284,18 +291,14 @@ namespace rengine {
                     glGetUniformLocation(lighting_shader.program_, ("lights[" + std::to_string(i) + "].Color").c_str()),
                     1,
                     glm::value_ptr(lightColors[i]));
-            // Update attenuation parameters and calculate radius
-            const GLfloat
-                    constant = 1.0; // Note that we don't send this to the shader, we assume it is always 1.0 (in our case)
-            const GLfloat linear = 0.22;
-            const GLfloat quadratic = 0.20;
+
             glUniform1f(glGetUniformLocation(lighting_shader.program_,
                                              ("lights[" + std::to_string(i) + "].Linear").c_str()), linear);
             glUniform1f(glGetUniformLocation(lighting_shader.program_,
                                              ("lights[" + std::to_string(i) + "].Quadratic").c_str()), quadratic);
         }
 
-        glUniform3fv(glGetUniformLocation(lighting_shader.program_, "viewPos"), 1, &camera.Position[0]);
+        glUniform3fv(glGetUniformLocation(lighting_shader.program_, "viewPos"), 1, glm::value_ptr(camera.Position));
 
         quad.draw();
 
@@ -348,7 +351,6 @@ namespace rengine {
         // Finally draw the result
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
 
         glBindVertexArray(0);
 
@@ -410,7 +412,7 @@ namespace rengine {
     }
 
     void Engine::setup_lights(std::vector<glm::vec3> &light_positions, std::vector<glm::vec3> &light_colors) const {
-        const GLuint NR_LIGHTS = 32;
+        const GLuint NR_LIGHTS = 16;
         srand(13);
 
         for (GLuint i = 0; i < NR_LIGHTS; i++) {

@@ -18,4 +18,6 @@ void main(void)
 
     c.rgb = vec3(1.0) - exp(-c.rgb * exposure);
     color = c;
+
+
 }

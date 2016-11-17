@@ -17,7 +17,7 @@ struct Light {
     float Radius;
 };
 
-const int NR_LIGHTS = 32;
+const int NR_LIGHTS = 16;
 uniform Light lights[NR_LIGHTS];
 uniform vec3 viewPos;
 
@@ -44,7 +44,8 @@ void main()
 //    float Specular = texture(gAlbedoSpec, tex_coord).a;
 
     // Then calculate lighting as usual
-    vec3 lighting  = Diffuse * 0.1; // hard-coded ambient component
+//    vec3 lighting  = Diffuse * 0.1; // hard-coded ambient component
+    vec3 lighting  = vec3(0.0, 0.0, 0.0);
     vec3 viewDir  = normalize(viewPos - FragPos);
     for(int i = 0; i < NR_LIGHTS; ++i)
     {
