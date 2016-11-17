@@ -13,10 +13,23 @@ namespace rengine {
 class GBuffer {
 
 public:
+
+    enum GBUFFER_TEXTURE_TYPE {
+        GBUFFER_TEXTURE_TYPE_POSITION,
+        GBUFFER_TEXTURE_TYPE_NORMAL,
+        GBUFFER_TEXTURE_TYPE_ALBEDO,
+        GBUFFER_NUM_TEXTURES
+    };
+
     explicit GBuffer(int width, int height);
     ~GBuffer();
 
-    void use();
+    void bind_for_geometry_pass() const;
+    void bind_for_lighting_pass() const;
+    void bind_for_final_pass() const;
+    void bind_read() const;
+    void bind_draw() const;
+    void set_read_buffer(GBUFFER_TEXTURE_TYPE texture_type) const;
 
     GLuint tex_[3];
     GLuint position_, normal_, albedo_spec_, depth_;

@@ -53,7 +53,7 @@ namespace rengine {
         if (!success)
         {
             glGetShaderInfoLog(vertex, 512, NULL, infoLog);
-            std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+            std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << "\nin " << vert_path << std::endl;
         }
         // Fragment Shader
         fragment = glCreateShader(GL_FRAGMENT_SHADER);
@@ -64,7 +64,7 @@ namespace rengine {
         if (!success)
         {
             glGetShaderInfoLog(fragment, 512, NULL, infoLog);
-            std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+            std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << "\nin " << frag_path<< std::endl;
         }
         // Shader Program
         this->program_ = glCreateProgram();
@@ -85,6 +85,6 @@ namespace rengine {
 
     }
 
-    void Shader::use() { glUseProgram(this->program_); }
+    void Shader::use() const { glUseProgram(this->program_); }
 
 }

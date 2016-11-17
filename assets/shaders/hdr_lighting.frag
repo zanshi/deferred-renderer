@@ -1,6 +1,8 @@
-#version 330 core
-out vec4 FragColor;
-in vec2 TexCoords;
+#version 410 core
+layout(location = 0) out vec4 FragColor;
+layout(location = 1) out vec4 BrightColor;
+
+//in vec2 TexCoords;
 
 uniform sampler2D gPosition;
 uniform sampler2D gNormal;
@@ -19,13 +21,27 @@ const int NR_LIGHTS = 32;
 uniform Light lights[NR_LIGHTS];
 uniform vec3 viewPos;
 
+// HDR bloom
+uniform float bloom_thresh_min = 0.8;
+uniform float bloom_thresh_max = 1.2;
+
 void main()
 {
-    // Retrieve data from gbuffer
-    vec3 FragPos = texture(gPosition, TexCoords).rgb;
-    vec3 Normal = texture(gNormal, TexCoords).rgb;
-    vec3 Diffuse = texture(gAlbedoSpec, TexCoords).rgb;
-    float Specular = texture(gAlbedoSpec, TexCoords).a;
+
+//    // Retrieve data from gbuffer
+    ivec2 tex_coord = ivec2(gl_FragCoord.xy);
+
+    vec3 FragPos = vec3(texelFetch(gPosition, tex_coord,0));
+    vec3 Normal = vec3(texelFetch(gNormal, tex_coord, 0));
+    vec4 temp = texelFetch(gAlbedoSpec, tex_coord, 0);
+
+    vec3 Diffuse = temp.rgb;
+    float Specular = temp.a;
+
+//    vec3 FragPos = texture(gPosition, tex_coord).rgb;
+//    vec3 Normal = texture(gNormal, tex_coord).rgb;
+//    vec3 Diffuse = texture(gAlbedoSpec, tex_coord).rgb;
+//    float Specular = texture(gAlbedoSpec, tex_coord).a;
 
     // Then calculate lighting as usual
     vec3 lighting  = Diffuse * 0.1; // hard-coded ambient component
@@ -49,4 +65,13 @@ void main()
     }
 //    FragColor = vec4(lighting, 1.0);
     FragColor = vec4(lighting, 1.0);
+
+    // Calculate luminance
+    float Y = dot(lighting, vec3(0.299, 0.587, 0.144));
+
+    // Threshold color based on its luminance and write it to
+    // the second output
+    lighting = lighting * 4.0 * smoothstep(bloom_thresh_min, bloom_thresh_max, Y);
+    BrightColor = vec4(lighting, 1.0);
+
 }
