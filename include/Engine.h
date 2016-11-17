@@ -17,6 +17,8 @@
 #include "Model.h"
 #include "camera.h"
 #include "GBuffer.h"
+#include "FBO.h"
+#include "Quad.h"
 
 namespace rengine {
 
@@ -57,10 +59,12 @@ namespace rengine {
         GLFWwindow *window_;
 
         std::vector<Model> models_;
+//        Quad quad_;
+
 //        const GLuint nr_lights_ = 64;
 
-        int screen_width_;
-        int screen_height_;
+        int window_width_;
+        int window_height_;
 
         static bool instantiated_;
 
@@ -74,13 +78,14 @@ namespace rengine {
 
         bool compile_shaders();
 
-        void lighting_pass(const Camera &camera,
-                           Shader &g_lighting,
-                           const std::vector<glm::vec3> &lightPositions,
-                           const std::vector<glm::vec3> &lightColors,
-                           const rengine::GBuffer &gbuffer) const;
+        void lighting_pass(const Camera &camera, const Shader &lighting_shader, const std::vector<glm::vec3> &lightPositions,
+                                   const std::vector<glm::vec3> &lightColors, const GBuffer &gbuffer, const FBO &render_fbo,
+                                   const Quad &quad) const;
 
-        void geometry_pass(Shader &g_geometry_shader, GBuffer &gbuffer) const;
+        void geometry_pass(Shader &g_geometry_shader, const GBuffer &gbuffer) const;
+
+        void bloom_pass(const FBO &render_fbo, const std::array<FBO, 2> &filter_fbos, const Shader &shader_filter,
+                                const Shader &shader_combine, const Quad &quad) const;
 
         void handle_input(float delta_time);
 
@@ -90,6 +95,10 @@ namespace rengine {
 
 
         void update_window_title(const GLfloat time) const;
+
+        void setup_lights(std::vector<glm::vec3> &light_positions, std::vector<glm::vec3> &light_colors) const;
+
+
     };
 
 }

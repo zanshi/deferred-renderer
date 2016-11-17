@@ -5,14 +5,35 @@
 
 #pragma once
 
-class FBO {
+#include <GL/glew.h>
+#include <vector>
 
-    FBO();
-    ~FBO();
-
-    void use();
+namespace rengine {
 
 
-};
+    class FBO {
 
+    public :
+
+        FBO(int width, int height, GLuint nr_textures = 1, bool gen_depth_buffer = true);
+
+        ~FBO();
+
+        void bind_read() const;
+
+        void bind_draw() const;
+
+        std::vector<GLuint> textures_;
+        GLuint tex_depth_;
+
+    private:
+
+        GLuint fbo_;
+        int width_, height_;
+
+        GLuint tex_scene_;
+        GLuint tex_brightpass_;
+    };
+
+}
 

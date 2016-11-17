@@ -20,7 +20,7 @@ namespace rengine {
         Shader(std::string vert_path, std::string frag_path);
         GLuint program_;
 
-        void use();
+        void use() const;
 
     };
 
