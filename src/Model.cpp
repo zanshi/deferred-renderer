@@ -29,7 +29,7 @@ namespace rengine {
         // Read file via ASSIMP
         Assimp::Importer importer;
         const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs |
-                                                       aiProcess_CalcTangentSpace);
+                                                       aiProcess_CalcTangentSpace );
 
 //        const aiScene *scene = aiImportFile(path.c_str(), aiProcessPreset_TargetRealtime_Fast);
 //        const aiScene *scene = importer.ReadFile(path, aiProcessPreset_TargetRealtime_MaxQuality);
@@ -86,7 +86,7 @@ namespace rengine {
             vector.z = mesh->mNormals[i].z;
             vertex.normal = vector;
 
-            if(mesh->mTangents) {
+//            if(mesh->mTangents) {
                 // Tangents
                 vector.x = mesh->mTangents[i].x;
                 vector.y = mesh->mTangents[i].y;
@@ -98,7 +98,7 @@ namespace rengine {
                 vector.y = mesh->mBitangents[i].y;
                 vector.z = mesh->mBitangents[i].z;
                 vertex.bitangent = vector;
-            }
+//            }
 //
 
             // Texture Coordinates

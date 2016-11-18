@@ -17,13 +17,13 @@ struct Light {
     float Radius;
 };
 
-const int NR_LIGHTS = 16;
+const int NR_LIGHTS = 32;
 uniform Light lights[NR_LIGHTS];
 uniform vec3 viewPos;
 
 // HDR bloom
-uniform float bloom_thresh_min = 0.8;
-uniform float bloom_thresh_max = 1.2;
+const float bloom_thresh_min = 0.8;
+const float bloom_thresh_max = 1.2;
 
 void main()
 {
@@ -66,7 +66,7 @@ void main()
     }
 //    FragColor = vec4(lighting, 1.0);
     FragColor = vec4(lighting, 1.0);
-
+//    FragColor = vec4(Normal, 1.0);
     // Calculate luminance
     float Y = dot(lighting, vec3(0.299, 0.587, 0.144));
 

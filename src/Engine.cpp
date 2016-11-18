@@ -110,7 +110,7 @@ namespace rengine {
     }
 
     bool Engine::setup_camera() {
-        camera_ = Camera{glm::vec3(0.0f, 0.0f, 3.0f)};
+        camera_ = Camera{glm::vec3(0.0f, 0.0f, 4.0f)};
         first_mouse_movement_ = true;
 
         return true;
@@ -167,7 +167,7 @@ namespace rengine {
 
         const auto gbuffer = GBuffer{window_width_, window_height_};
         const auto render_fbo = FBO{window_width_, window_height_, 2, true};
-        const auto filter_fbos = std::array<FBO, 2>{{FBO{window_width_, window_height_, 1, false},
+        const auto filter_fbos = std::array<FBO, 2>{{FBO{window_height_, window_width_, 1, false},
                                                             FBO{window_width_, window_height_, 1, false}}};
 
         // Create quad for rendering the final image
@@ -200,7 +200,10 @@ namespace rengine {
             glfwPollEvents();
             handle_input(delta_time);
 
+            glViewport(0, 0, window_width_, window_height_);
+
             // CAMERA
+            geometry_shader.use();
             update_camera(ubo_transforms);
 
             // LIGHTS
@@ -234,13 +237,14 @@ namespace rengine {
         g_geometry_shader.use();
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
-        glEnable(GL_CULL_FACE);
+//        glEnable(GL_CULL_FACE);
 
         // Draw the loaded model
         glm::mat4 model;
         model = glm::translate(model,
                                glm::vec3(0.0f, -3.0f,
                                          0.0f)); // Translate it down a bit so it's at the center of the scene
+//        model = glm::scale(model, glm::vec3(0.25f));    // It's a bit too big for our scene, so scale it down
         model = glm::scale(model, glm::vec3(0.25f));    // It's a bit too big for our scene, so scale it down
         glUniformMatrix4fv(glGetUniformLocation(g_geometry_shader.program_, "model"), 1, GL_FALSE,
                            glm::value_ptr(model));
@@ -249,7 +253,7 @@ namespace rengine {
         render_scene(g_geometry_shader.program_);
 
         glDisable(GL_DEPTH_TEST);
-        glDisable(GL_CULL_FACE);
+//        glDisable(GL_CULL_FACE);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
@@ -274,13 +278,23 @@ namespace rengine {
         const float temp_time = static_cast<float>(glfwGetTime());
 //        const float cosrot = cosf(temp_time);
         // Update attenuation parameters and calculate radius
-        const GLfloat linear = 0.35;
-        const GLfloat quadratic = 0.44;
+        // Distance 200
+//        const GLfloat linear = 0.022;
+//        const GLfloat quadratic = 0.0019;
+
+        // Distance 100
+        const GLfloat linear = 0.045;
+        const GLfloat quadratic = 0.0075;
+
+        // Distance 13
+//        const GLfloat linear = 0.35;
+//        const GLfloat quadratic = 0.44;
 
         // TODO do it more like in the OpenGL superbible, seems way more efficient
         for (int i = 0; i < lightPositions.size(); i++) {
 
             const glm::vec3 pos = glm::rotateZ(lightPositions[i], temp_time);
+
 
 //            const glm::vec3 pos(lightPositions[i].x, lightPositions[i].y, lightPositions[i].z * rot * (i+1));
             glUniform3fv(glGetUniformLocation(lighting_shader.program_,
@@ -321,6 +335,7 @@ namespace rengine {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, render_fbo.textures_[1]); // Bind the brightpass texture
 
+        glViewport(0, 0, window_height_, window_width_);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
         filter_fbos[1].bind_draw(); // Use the second filter FBO
@@ -328,6 +343,7 @@ namespace rengine {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, filter_fbos[0].textures_[0]);
 
+        glViewport(0, 0, window_width_, window_height_);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 
@@ -365,6 +381,9 @@ namespace rengine {
 //        models_.push_back(Model{"../assets/models/blender/Blenderman.dae"});
 //        models_.push_back(Model{"../assets/models/e.dae"});
 //        models_.push_back(Model{"../assets/models/bmw/bmw.obj"});
+//        models_.push_back(Model{"../assets/models/cottage/Snow covered CottageFBX.fbx"});
+//        models_.push_back(Model{"../assets/models/bmx/bmx.obj"});
+//        models_.push_back(Model{"../assets/models/city/Scifi Floating City/Scifi Floating City.obj"});
 
         return true;
 
@@ -412,15 +431,17 @@ namespace rengine {
     }
 
     void Engine::setup_lights(std::vector<glm::vec3> &light_positions, std::vector<glm::vec3> &light_colors) const {
-        const GLuint NR_LIGHTS = 16;
+        const GLuint NR_LIGHTS = 32;
         srand(13);
 
         for (GLuint i = 0; i < NR_LIGHTS; i++) {
             // Calculate slightly random offsets
             GLfloat xPos = ((rand() % 100) / 100.0f) * 6.0f - 3.0f;
-            GLfloat yPos = ((rand() % 100) / 100.0f) * 6.0f - 4.0f;
+            GLfloat yPos = ((rand() % 100) / 100.0f) * 6.0f - 3.0f;
             GLfloat zPos = ((rand() % 100) / 100.0f) * 6.0f - 3.0f;
             light_positions.push_back(glm::vec3(xPos, yPos, zPos));
+
+            light_positions[i] = light_positions[i] * 5.0f;
 
             // Also calculate random color
             GLfloat rColor = ((rand() % 100) / 200.0f) + 0.5f; // Between 0.5 and 1.0
