@@ -110,12 +110,16 @@ include_directories(${GLFW_INCLUDE})
 
 # ///////////////////////////////////////////////////
 # MINIZIP
+
+if (NOT APPLE)
+
 add_subdirectory(${VENDOR_DIR}/minizip)
 
 set(MINIZIP_INCLUDE
         ${VENDOR_DIR}/zlib)
 
 include_directories(${MINIZIP_PUBLIC_HEADERS})
+endif(NOT APPLE)
 
 # ///////////////////////////////////////////////////
 # ASSIMP
@@ -144,9 +148,12 @@ file(GLOB Application_lib_HEADERS ${PROJECT_SOURCE_DIR}/include/*.h)
 add_executable(${PROJECT_NAME} ${Application_lib_SOURCES})
 
 
-target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES} minizip GLEW glfw assimp)
-
-
 if (APPLE)
     target_link_libraries(${PROJECT_NAME} ${OPENGL_FRAMEWORK} ${COCOA_FRAMEWORK})
+    set(OTHER_LIBS minizip)
 endif (APPLE)
+
+target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES} ${OTHER_LIBS} GLEW glfw assimp)
+
+
+
