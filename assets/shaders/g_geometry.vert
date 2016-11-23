@@ -44,10 +44,10 @@ void main()
 //
 ////    mat3 normalMatrix = transpose(inverse(mat3(model)));
 ////
-////    vs_out.Normal = normalMatrix * normal;
-    vs_out.Normal = normal;
-    vs_out.Tangent = tangent;
-    vs_out.BiTangent = bitangent;
+//    vs_out.Normal = normalMatrix * normal;
+//    vs_out.Normal = normal;
+//    vs_out.Tangent = tangent;
+//    vs_out.BiTangent = bitangent;
 //    vs_out.TexCoords = texCoords;
 
 
@@ -55,14 +55,10 @@ void main()
     gl_Position = transform.projection * transform.view * worldPos;
     vs_out.TexCoords = texCoords;
 //
-//    mat3 normalMatrix = transpose(inverse(mat3(model)));
-//
-//    vs_out.Normal = normalMatrix * normal;
-//    vs_out.Normal = mat3(model) * normal;
-//    vs_out.Normal = gl_NormalMatrix * normal;
-//
-//    vs_out.Tangent = normalMatrix * tangent;
-//
-//    vs_out.BiTangent = normalMatrix * bitangent;
+    mat3 normalMatrix = transpose(inverse(mat3(model)));
+
+    vs_out.Normal = normalMatrix * normal;
+    vs_out.Tangent = normalMatrix * tangent;
+    vs_out.BiTangent = normalMatrix * bitangent;
 
 }

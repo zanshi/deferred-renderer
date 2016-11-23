@@ -3,17 +3,10 @@
 //
 
 #include <assimp/postprocess.h>
-#include <assimp/cimport.h>
-#include <memory>
 #include "Engine.h"
-#include "camera.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/rotate_vector.hpp>
-#include <GBuffer.h>
-#include <Light.h>
 #include <array>
 
 namespace rengine {
@@ -87,6 +80,8 @@ namespace rengine {
 
         glfwSetKeyCallback(window_, key_callback);
         glfwSetCursorPosCallback(window_, mouse_callback);
+
+//        glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK) {
@@ -246,6 +241,7 @@ namespace rengine {
                                          0.0f)); // Translate it down a bit so it's at the center of the scene
 //        model = glm::scale(model, glm::vec3(0.25f));    // It's a bit too big for our scene, so scale it down
         model = glm::scale(model, glm::vec3(0.25f));    // It's a bit too big for our scene, so scale it down
+//        model = glm::scale(model, glm::vec3(4.0f));    // It's a bit too big for our scene, so scale it down
         glUniformMatrix4fv(glGetUniformLocation(g_geometry_shader.program_, "model"), 1, GL_FALSE,
                            glm::value_ptr(model));
 
@@ -283,12 +279,12 @@ namespace rengine {
 //        const GLfloat quadratic = 0.0019;
 
         // Distance 100
-        const GLfloat linear = 0.045;
-        const GLfloat quadratic = 0.0075;
+//        const GLfloat linear = 0.045;
+//        const GLfloat quadratic = 0.0075;
+
+        // Distance 20
 
         // Distance 13
-//        const GLfloat linear = 0.35;
-//        const GLfloat quadratic = 0.44;
 
         // TODO do it more like in the OpenGL superbible, seems way more efficient
         for (int i = 0; i < lightPositions.size(); i++) {
@@ -307,9 +303,9 @@ namespace rengine {
                     glm::value_ptr(lightColors[i]));
 
             glUniform1f(glGetUniformLocation(lighting_shader.program_,
-                                             ("lights[" + std::to_string(i) + "].Linear").c_str()), linear);
+                                             ("lights[" + std::to_string(i) + "].Linear").c_str()), light_linear_factor_);
             glUniform1f(glGetUniformLocation(lighting_shader.program_,
-                                             ("lights[" + std::to_string(i) + "].Quadratic").c_str()), quadratic);
+                                             ("lights[" + std::to_string(i) + "].Quadratic").c_str()), light_quadratic_factor_);
         }
 
         glUniform3fv(glGetUniformLocation(lighting_shader.program_, "viewPos"), 1, glm::value_ptr(camera.Position));
@@ -335,7 +331,6 @@ namespace rengine {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, render_fbo.textures_[1]); // Bind the brightpass texture
 
-        glViewport(0, 0, window_height_, window_width_);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
         filter_fbos[1].bind_draw(); // Use the second filter FBO
@@ -343,7 +338,6 @@ namespace rengine {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, filter_fbos[0].textures_[0]);
 
-        glViewport(0, 0, window_width_, window_height_);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 
@@ -384,6 +378,11 @@ namespace rengine {
 //        models_.push_back(Model{"../assets/models/cottage/Snow covered CottageFBX.fbx"});
 //        models_.push_back(Model{"../assets/models/bmx/bmx.obj"});
 //        models_.push_back(Model{"../assets/models/city/Scifi Floating City/Scifi Floating City.obj"});
+//        models_.push_back(Model{"../assets/models/bathroom/BathroomSet02.obj"});
+//        models_.push_back(Model{"../assets/models/rungholt/rungholt.obj"});
+        models_.push_back(Model{"../assets/models/crytek/sponza.obj"});
+        models_.push_back(Model{"../assets/models/cyborg/Cyborg.obj"});
+//        models_.push_back(Model{"../assets/models/head/head.OBJ"});
 
         return true;
 
@@ -408,6 +407,34 @@ namespace rengine {
             camera_.ProcessKeyboard(LEFT, delta_time);
         if (keys_[GLFW_KEY_D])
             camera_.ProcessKeyboard(RIGHT, delta_time);
+        if (keys_[GLFW_KEY_1]) {
+            light_linear_factor_ = 0.7f;
+            light_quadratic_factor_ = 1.8f;
+        }
+        if (keys_[GLFW_KEY_2]) {
+            light_linear_factor_ = 0.35f;
+            light_quadratic_factor_ = 0.44f;
+        }
+        if (keys_[GLFW_KEY_3]) {
+            light_linear_factor_ = 0.14f;
+            light_quadratic_factor_ = 0.07f;
+        }
+        if (keys_[GLFW_KEY_4]) {
+            light_linear_factor_ = 0.045f;
+            light_quadratic_factor_ = 0.0075f;
+        }
+        if (keys_[GLFW_KEY_5]) {
+            light_linear_factor_ = 0.022f;
+            light_quadratic_factor_ = 0.0019f;
+        }
+        if (keys_[GLFW_KEY_6]) {
+            light_linear_factor_ = 0.012f;
+            light_quadratic_factor_ = 0.0007f;
+        }
+
+
+
+
 
     }
 
@@ -430,23 +457,32 @@ namespace rengine {
 
     }
 
-    void Engine::setup_lights(std::vector<glm::vec3> &light_positions, std::vector<glm::vec3> &light_colors) const {
+    void Engine::setup_lights(std::vector<glm::vec3> &light_positions, std::vector<glm::vec3> &light_colors) {
         const GLuint NR_LIGHTS = 32;
         srand(13);
 
+        light_linear_factor_ = 0.35;
+        light_quadratic_factor_ = 0.44;
+
         for (GLuint i = 0; i < NR_LIGHTS; i++) {
             // Calculate slightly random offsets
-            GLfloat xPos = ((rand() % 100) / 100.0f) * 6.0f - 3.0f;
-            GLfloat yPos = ((rand() % 100) / 100.0f) * 6.0f - 3.0f;
-            GLfloat zPos = ((rand() % 100) / 100.0f) * 6.0f - 3.0f;
+//            GLfloat xPos = ((rand() % 100) / 100.0f) * 6.0f - 3.0f;
+//            GLfloat yPos = ((rand() % 100) / 100.0f) * 6.0f - 3.0f + 4.0f;
+//            GLfloat zPos = ((rand() % 100) / 100.0f) * 6.0f - 3.0f;
+            GLfloat xPos = 0.1f * i * 6.0f - 3.0f;
+            GLfloat yPos = 0.1f * i * 6.0f - 3.0f;
+            GLfloat zPos = 0.1f * i * 6.0f - 3.0f;
             light_positions.push_back(glm::vec3(xPos, yPos, zPos));
 
-            light_positions[i] = light_positions[i] * 5.0f;
+            light_positions[i] = light_positions[i] * 10.0f;
 
             // Also calculate random color
-            GLfloat rColor = ((rand() % 100) / 200.0f) + 0.5f; // Between 0.5 and 1.0
-            GLfloat gColor = ((rand() % 100) / 200.0f) + 0.5f; // Between 0.5 and 1.0
-            GLfloat bColor = ((rand() % 100) / 200.0f) + 0.5f; // Between 0.5 and 1.0
+//            GLfloat rColor = ((rand() % 100) / 200.0f) + 0.5f; // Between 0.5 and 1.0
+//            GLfloat gColor = ((rand() % 100) / 200.0f) + 0.5f; // Between 0.5 and 1.0
+//            GLfloat bColor = ((rand() % 100) / 200.0f) + 0.5f; // Between 0.5 and 1.0
+            GLfloat rColor = 1.0f - 0.01f * i; // Between 0.5 and 1.0
+            GLfloat gColor = 1.0f - 0.02f * i; // Between 0.5 and 1.0
+            GLfloat bColor = 1.0f - 0.03f * i; // Between 0.5 and 1.0
             light_colors.push_back(glm::vec3(rColor, gColor, bColor));
         }
     }

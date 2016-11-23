@@ -19,23 +19,32 @@ uniform sampler2D texture_normal1;
 
 void main()
 {
-    vec3 N = normalize(fs_in.Normal);
-    vec3 T = normalize(fs_in.Tangent);
-//    vec3 B = cross(N,T);
-    vec3 B = normalize(fs_in.BiTangent);
+
 //    if (dot(cross(N, T), B) < 0.0) {
 //        T = T * -1.0;
 //    }
 //    vec3 B = cross(N, T);
 
-    mat3 TBN = mat3(T,B,N);
 
-    vec3 nm = texture(texture_normal1, fs_in.TexCoords).xyz * 2.0 - vec3(1.0);
-    nm = TBN * normalize(nm);
+//    if( textureSize( texture_normal1, 0).x > 0) {
+        vec3 N = normalize(fs_in.Normal);
+        vec3 T = normalize(fs_in.Tangent);
+        vec3 B = normalize(fs_in.BiTangent);
+        mat3 TBN = mat3(T,B,N);
+        vec3 nm = texture(texture_normal1, fs_in.TexCoords).xyz * 2.0 - vec3(1.0);
+        nm = TBN * normalize(nm);
+//    } else {
+//        nm = fs_in.Normal;
+//    }
+
+
 
     // Store the fragment position vector in the first gbuffer texture
     gPosition = fs_in.FragPos;
     // Also store the per-fragment normals into the gbuffer
+//    if(nm != vec3(-1.0))
+//    gNormal = normalize(nm);
+//    else
     gNormal = normalize(nm);
     // And the diffuse per-fragment color
     gAlbedoSpec.rgb = texture(texture_diffuse1, fs_in.TexCoords).rgb;

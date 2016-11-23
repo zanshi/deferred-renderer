@@ -84,5 +84,6 @@ namespace rengine {
 
     void FBO::bind_draw() const {
         glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
+        glViewport(0, 0, width_, height_);
     }
 }
