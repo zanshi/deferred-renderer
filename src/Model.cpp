@@ -29,7 +29,7 @@ namespace rengine {
         // Read file via ASSIMP
         Assimp::Importer importer;
         const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs |
-                                                       aiProcess_CalcTangentSpace );
+                                                       aiProcess_CalcTangentSpace | aiProcess_GenSmoothNormals );
 
 //        const aiScene *scene = aiImportFile(path.c_str(), aiProcessPreset_TargetRealtime_Fast);
 //        const aiScene *scene = importer.ReadFile(path, aiProcessPreset_TargetRealtime_MaxQuality);
@@ -70,8 +70,8 @@ namespace rengine {
         // Walk through each of the mesh's vertices
         for (GLuint i = 0; i < mesh->mNumVertices; i++) {
             Vertex vertex;
-            glm::vec3
-                    vector; // We declare a placeholder vector since assimp uses its own vector class that doesn't directly convert to glm's vec3 class so we transfer the data to this placeholder glm::vec3 first.
+            glm::vec3 vector; // We declare a placeholder vector since assimp uses its own vector class
+            // that doesn't directly convert to glm's vec3 class so we transfer the data to this placeholder glm::vec3 first.
             // Positions
             vector.x = mesh->mVertices[i].x;
             vector.y = mesh->mVertices[i].y;
@@ -87,17 +87,17 @@ namespace rengine {
             vertex.normal = vector;
 
 //            if(mesh->mTangents) {
-                // Tangents
-                vector.x = mesh->mTangents[i].x;
-                vector.y = mesh->mTangents[i].y;
-                vector.z = mesh->mTangents[i].z;
-                vertex.tangent = vector;
+            // Tangents
+            vector.x = mesh->mTangents[i].x;
+            vector.y = mesh->mTangents[i].y;
+            vector.z = mesh->mTangents[i].z;
+            vertex.tangent = vector;
 
 //            // Bitangents
-                vector.x = mesh->mBitangents[i].x;
-                vector.y = mesh->mBitangents[i].y;
-                vector.z = mesh->mBitangents[i].z;
-                vertex.bitangent = vector;
+            vector.x = mesh->mBitangents[i].x;
+            vector.y = mesh->mBitangents[i].y;
+            vector.z = mesh->mBitangents[i].z;
+            vertex.bitangent = vector;
 //            }
 //
 
@@ -144,7 +144,7 @@ namespace rengine {
                                                                               "texture_specular");
             textures.insert(textures.end(), specular_maps.begin(), specular_maps.end());
 
-            std::vector<Texture> normal_maps = load_material_textures(material, aiTextureType_NORMALS,
+            std::vector<Texture> normal_maps = load_material_textures(material, aiTextureType_HEIGHT,
                                                                       "texture_normal");
             textures.insert(textures.end(), normal_maps.begin(), normal_maps.end());
         }

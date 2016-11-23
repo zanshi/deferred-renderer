@@ -44,29 +44,39 @@ void main()
 //    float Specular = texture(gAlbedoSpec, tex_coord).a;
 
     // Then calculate lighting as usual
-//    vec3 lighting  = Diffuse * 0.1; // hard-coded ambient component
-    vec3 lighting  = vec3(0.0, 0.0, 0.0);
+    vec3 lighting  = Diffuse * 0.1; // hard-coded ambient component
+//    vec3 lighting  = vec3(0.0, 0.0, 0.0);
     vec3 viewDir  = normalize(viewPos - FragPos);
     for(int i = 0; i < NR_LIGHTS; ++i)
     {
         // Diffuse
+//        vec3 templight = vec3(0.5f * i, 0.5 * i, 0.5 * i);
         vec3 lightDir = normalize(lights[i].Position - FragPos);
         vec3 diffuse = max(dot(Normal, lightDir), 0.0) * Diffuse * lights[i].Color;
+
         // Specular
         vec3 halfwayDir = normalize(lightDir + viewDir);
         float spec = pow(max(dot(Normal, halfwayDir), 0.0), 16.0);
         vec3 specular = lights[i].Color * spec * Specular;
+
         // Attenuation
         float distance = length(lights[i].Position - FragPos);
 //        float attenuation = 50.0 / (pow(distance, 2.0) +  + 1.0);
         float attenuation = 1.0 / (1.0 + lights[i].Linear * distance + lights[i].Quadratic * distance * distance);
+
         diffuse *= attenuation;
         specular *= attenuation;
         lighting += diffuse + specular;
     }
-//    FragColor = vec4(lighting, 1.0);
+
     FragColor = vec4(lighting, 1.0);
 //    FragColor = vec4(Normal, 1.0);
+
+
+
+    // ------------------------
+    /// HDR
+
     // Calculate luminance
     float Y = dot(lighting, vec3(0.299, 0.587, 0.144));
 

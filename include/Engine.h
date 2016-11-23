@@ -69,6 +69,9 @@ namespace rengine {
         static bool instantiated_;
 
         bool setup_camera();
+        GLfloat light_linear_factor_;
+        GLfloat light_quadratic_factor_;
+
 
         Camera camera_;
         static double last_x;
@@ -93,10 +96,9 @@ namespace rengine {
 
         void update_lights(std::vector<glm::vec3> &light_positions, GLfloat time);
 
-
         void update_window_title(const GLfloat time) const;
 
-        void setup_lights(std::vector<glm::vec3> &light_positions, std::vector<glm::vec3> &light_colors) const;
+        void setup_lights(std::vector<glm::vec3> &light_positions, std::vector<glm::vec3> &light_colors);
 
 
     };
