@@ -73,7 +73,6 @@ namespace rengine {
             glUniform1i(glGetUniformLocation(current_program, (name + number).c_str()), i);
             glBindTexture(GL_TEXTURE_2D, textures_[i].id);
         }
-//        glActiveTexture(GL_TEXTURE0);
 
         // Draw mesh
         glBindVertexArray(VAO_);

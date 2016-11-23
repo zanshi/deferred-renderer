@@ -1,4 +1,4 @@
-#version 330 core
+#version 410 core
 layout (location = 0) out vec3 gPosition;
 layout (location = 1) out vec3 gNormal;
 layout (location = 2) out vec4 gAlbedoSpec;
@@ -30,6 +30,8 @@ void main()
         vec3 N = normalize(fs_in.Normal);
         vec3 T = normalize(fs_in.Tangent);
         vec3 B = normalize(fs_in.BiTangent);
+//    vec3 B = cross(N, T);
+
         mat3 TBN = mat3(T,B,N);
         vec3 nm = texture(texture_normal1, fs_in.TexCoords).xyz * 2.0 - vec3(1.0);
         nm = TBN * normalize(nm);

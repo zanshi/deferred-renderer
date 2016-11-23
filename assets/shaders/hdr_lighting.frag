@@ -28,14 +28,16 @@ const float bloom_thresh_max = 1.2;
 void main()
 {
 
+
 //    // Retrieve data from gbuffer
     ivec2 tex_coord = ivec2(gl_FragCoord.xy);
 
-    vec3 FragPos = vec3(texelFetch(gPosition, tex_coord,0));
-    vec3 Normal = vec3(texelFetch(gNormal, tex_coord, 0));
-    vec4 temp = texelFetch(gAlbedoSpec, tex_coord, 0);
+    vec3 FragPos = vec3(texelFetch(gPosition, ivec2(tex_coord),0));
+    vec3 Normal = vec3(texelFetch(gNormal, ivec2(tex_coord), 0));
+    vec4 temp = texelFetch(gAlbedoSpec, ivec2(tex_coord), 0);
 
     vec3 Diffuse = temp.rgb;
+//    Diffuse = vec3(0.0);
     float Specular = temp.a;
 
 //    vec3 FragPos = texture(gPosition, tex_coord).rgb;
