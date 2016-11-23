@@ -13,6 +13,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <vector>
+#include <array>
 #include "Mesh.h"
 #include "Model.h"
 #include "camera.h"
@@ -81,7 +82,7 @@ namespace rengine {
 
         bool compile_shaders();
 
-        void lighting_pass(const Camera &camera, const Shader &lighting_shader, const std::vector<glm::vec3> &lightPositions,
+        inline void lighting_pass(const Camera &camera, const Shader &lighting_shader, const std::vector<glm::vec3> &lightPositions,
                                    const std::vector<glm::vec3> &lightColors, const GBuffer &gbuffer, const FBO &render_fbo,
                                    const Quad &quad) const;
 

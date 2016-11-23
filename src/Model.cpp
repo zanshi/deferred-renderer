@@ -5,9 +5,9 @@
 
 #include "Model.h"
 #include <algorithm>
-#include <assimp/Importer.hpp>
-#include <assimp/cimport.h>
 #include <assimp/postprocess.h>
+#include <assimp/Importer.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include "Texture.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -29,7 +29,7 @@ namespace rengine {
         // Read file via ASSIMP
         Assimp::Importer importer;
         const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs |
-                                                       aiProcess_CalcTangentSpace | aiProcess_GenSmoothNormals );
+                                                       aiProcess_CalcTangentSpace | aiProcess_GenNormals);
 
 //        const aiScene *scene = aiImportFile(path.c_str(), aiProcessPreset_TargetRealtime_Fast);
 //        const aiScene *scene = importer.ReadFile(path, aiProcessPreset_TargetRealtime_MaxQuality);
@@ -67,51 +67,21 @@ namespace rengine {
         std::vector<GLuint> indices;
         std::vector<Texture> textures;
 
+        bool has_uv = mesh->HasTextureCoords(0);
+        bool has_tangent = mesh->HasTangentsAndBitangents();
+
         // Walk through each of the mesh's vertices
         for (GLuint i = 0; i < mesh->mNumVertices; i++) {
             Vertex vertex;
             glm::vec3 vector; // We declare a placeholder vector since assimp uses its own vector class
             // that doesn't directly convert to glm's vec3 class so we transfer the data to this placeholder glm::vec3 first.
             // Positions
-            vector.x = mesh->mVertices[i].x;
-            vector.y = mesh->mVertices[i].y;
-            vector.z = mesh->mVertices[i].z;
-            vertex.position = vector;
-
-//            std::cout << vector.x << " " << vector.y << " " << vector.z << std::endl;
-
-            // Normals
-            vector.x = mesh->mNormals[i].x;
-            vector.y = mesh->mNormals[i].y;
-            vector.z = mesh->mNormals[i].z;
-            vertex.normal = vector;
-
-//            if(mesh->mTangents) {
-            // Tangents
-            vector.x = mesh->mTangents[i].x;
-            vector.y = mesh->mTangents[i].y;
-            vector.z = mesh->mTangents[i].z;
-            vertex.tangent = vector;
-
-//            // Bitangents
-            vector.x = mesh->mBitangents[i].x;
-            vector.y = mesh->mBitangents[i].y;
-            vector.z = mesh->mBitangents[i].z;
-            vertex.bitangent = vector;
-//            }
-//
-
-            // Texture Coordinates
-            if (mesh->mTextureCoords[0]) // Does the mesh contain texture coordinates?
-            {
-                glm::vec2 vec;
-                // A vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
-                // use models where a vertex can have multiple texture coordinates so we always take the first set (0).
-                vec.x = mesh->mTextureCoords[0][i].x;
-                vec.y = mesh->mTextureCoords[0][i].y;
-                vertex.tex_coords = vec;
-            } else
-                vertex.tex_coords = glm::vec2(0.0f, 0.0f);
+            vertex.position = glm::make_vec3(&mesh->mVertices[i].x);
+            vertex.tex_coords = (has_uv) ? glm::make_vec2(&mesh->mTextureCoords[0][i].x) : glm::vec2(0.0f);
+            vertex.normal = glm::make_vec3(&mesh->mNormals[i].x);
+            vertex.tangent = (has_tangent) ? glm::make_vec3(&mesh->mTangents[i].x) : glm::vec3(0.0f, 1.0f, 0.0f);
+            vertex.bitangent = (has_tangent) ? glm::make_vec3(&mesh->mBitangents[i].x) : glm::cross(vertex.normal,
+                                                                                                    vertex.tangent);
             vertices.push_back(vertex);
         }
         // Now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
@@ -121,9 +91,6 @@ namespace rengine {
             for (GLuint j = 0; j < face.mNumIndices; j++)
                 indices.push_back(face.mIndices[j]);
         }
-
-//        if(scene->HasTextures())
-
 
         // Process materials
         if (scene->mNumMaterials != 0) {
@@ -186,6 +153,7 @@ namespace rengine {
         GLenum format = 3;
         //Generate texture ID and load texture data
         std::string filename = std::string(path);
+        std::cout << filename << std::endl;
         filename = directory + '/' + filename;
         GLuint textureID;
         glGenTextures(1, &textureID);
@@ -213,6 +181,9 @@ namespace rengine {
             default:
                 break;
         }
+
+        // TODO implement gamma support, linear color space etc
+        format = GL_RGB;
 
         // Assign texture to ID
         glBindTexture(GL_TEXTURE_2D, textureID);

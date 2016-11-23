@@ -2,12 +2,12 @@
 // Created by niclas on 2016-10-21.
 //
 
-#include <assimp/postprocess.h>
 #include "Engine.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <array>
+#include <stdlib.h>
 
 namespace rengine {
 
@@ -64,7 +64,7 @@ namespace rengine {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+//        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
         glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
         window_ = glfwCreateWindow(window_width_, window_height_, "Deferred renderer", NULL, NULL);
@@ -81,7 +81,7 @@ namespace rengine {
         glfwSetKeyCallback(window_, key_callback);
         glfwSetCursorPosCallback(window_, mouse_callback);
 
-//        glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK) {
@@ -151,7 +151,7 @@ namespace rengine {
         glGenBuffers(1, &ubo_transforms);
 
         glBindBuffer(GL_UNIFORM_BUFFER, ubo_transforms);
-        glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+        glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr, GL_STATIC_DRAW);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
         glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo_transforms, 0, 2 * sizeof(glm::mat4));
@@ -231,7 +231,7 @@ namespace rengine {
 
         g_geometry_shader.use();
         glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LEQUAL);
+//        glDepthFunc(GL_LEQUAL);
 //        glEnable(GL_CULL_FACE);
 
         // Draw the loaded model
@@ -260,7 +260,7 @@ namespace rengine {
                                const Quad &quad) const {
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         gbuffer.bind_for_lighting_pass();
         render_fbo.bind_draw();
@@ -380,8 +380,8 @@ namespace rengine {
 //        models_.push_back(Model{"../assets/models/city/Scifi Floating City/Scifi Floating City.obj"});
 //        models_.push_back(Model{"../assets/models/bathroom/BathroomSet02.obj"});
 //        models_.push_back(Model{"../assets/models/rungholt/rungholt.obj"});
-        models_.push_back(Model{"../assets/models/crytek/sponza.obj"});
-        models_.push_back(Model{"../assets/models/cyborg/Cyborg.obj"});
+//        models_.push_back(Model{"../assets/models/crytek/sponza.obj"});
+//        models_.push_back(Model{"../assets/models/cyborg/Cyborg.obj"});
 //        models_.push_back(Model{"../assets/models/head/head.OBJ"});
 
         return true;
