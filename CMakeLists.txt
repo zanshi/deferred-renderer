@@ -60,6 +60,9 @@ endif (APPLE)
 set(COMMON_INCLUDES ${PROJECT_SOURCE_DIR}/include)
 include_directories(${COMMON_INCLUDES})
 
+# ///////////////////////////////////////////////////
+# GLM
+include_directories(${VENDOR_DIR}/glm/include)
 
 # ///////////////////////////////////////////////////
 # STB
