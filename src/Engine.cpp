@@ -64,7 +64,7 @@ namespace rengine {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-//        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
         glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
         window_ = glfwCreateWindow(window_width_, window_height_, "Deferred renderer", NULL, NULL);
@@ -231,8 +231,9 @@ namespace rengine {
 
         g_geometry_shader.use();
         glEnable(GL_DEPTH_TEST);
-//        glDepthFunc(GL_LEQUAL);
-//        glEnable(GL_CULL_FACE);
+        glDepthFunc(GL_LEQUAL);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
 
         // Draw the loaded model
         glm::mat4 model;
@@ -248,8 +249,8 @@ namespace rengine {
         // Render the scene. (Also binds relevant textures)
         render_scene(g_geometry_shader.program_);
 
+        glDisable(GL_CULL_FACE);
         glDisable(GL_DEPTH_TEST);
-//        glDisable(GL_CULL_FACE);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
