@@ -24,9 +24,11 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
 
 # Build static libraries
+if (NOT APPLE)
 SET(BUILD_SHARED_LIBRARIES OFF)
 SET(CMAKE_EXE_LINKER_FLAGS "-static")
 SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+endif(NOT APPLE)
 
 # Add the external module path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/modules)
@@ -47,6 +49,7 @@ if (APPLE)
     # Find external libraries
     find_library(OPENGL_FRAMEWORK OpenGL)
     find_library(COCOA_FRAMEWORK Cocoa)
+    find_library(minizip minizip)
 endif (APPLE)
 
 # Add include directories
@@ -114,15 +117,13 @@ include_directories(${GLFW_INCLUDE})
 # ///////////////////////////////////////////////////
 # MINIZIP
 
-if (NOT APPLE)
 
 add_subdirectory(${VENDOR_DIR}/minizip)
 
-set(MINIZIP_INCLUDE
-        ${VENDOR_DIR}/zlib)
+#set(MINIZIP_INCLUDE
+#        ${VENDOR_DIR}/zlib)
 
 include_directories(${MINIZIP_PUBLIC_HEADERS})
-endif(NOT APPLE)
 
 # ///////////////////////////////////////////////////
 # ASSIMP
@@ -153,8 +154,9 @@ add_executable(${PROJECT_NAME} ${Application_lib_SOURCES})
 
 if (APPLE)
     target_link_libraries(${PROJECT_NAME} ${OPENGL_FRAMEWORK} ${COCOA_FRAMEWORK})
-    set(OTHER_LIBS minizip)
 endif (APPLE)
+
+set(OTHER_LIBS ${minizip})
 
 target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES} ${OTHER_LIBS} GLEW glfw assimp)
 
