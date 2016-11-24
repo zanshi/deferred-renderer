@@ -24,18 +24,18 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
 
 # Build static libraries
-if (NOT APPLE)
-SET(BUILD_SHARED_LIBRARIES OFF)
-SET(CMAKE_EXE_LINKER_FLAGS "-static")
-SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-endif(NOT APPLE)
+if (NOT APPLE AND NOT UNIX)
+    SET(BUILD_SHARED_LIBRARIES OFF)
+    SET(CMAKE_EXE_LINKER_FLAGS "-static")
+    SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+endif(NOT APPLE AND NOT UNIX)
 
 # Add the external module path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/modules)
 
 # Find external packages
 find_package(PkgConfig REQUIRED)
-find_package(OPENGL REQUIRED)
+find_package(OpenGL REQUIRED)
 #find_package(GLEW REQUIRED)
 #find_package(glfw 3.2 REQUIRED)
 #find_package(Assimp REQUIRED)
