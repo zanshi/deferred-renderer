@@ -93,7 +93,7 @@ namespace rengine {
         }
 
         // Process materials
-        if (scene->mNumMaterials != 0) {
+        if (scene->mNumMaterials > 0) {
             aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
             // We assume a convention for sampler names in the shaders. Each diffuse texture should be named
             // as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER.
@@ -183,7 +183,7 @@ namespace rengine {
         }
 
         // TODO implement gamma support, linear color space etc
-        format = GL_RGB;
+//        format = GL_RGB;
 
         // Assign texture to ID
         glBindTexture(GL_TEXTURE_2D, textureID);
