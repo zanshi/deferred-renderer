@@ -34,8 +34,11 @@ void main()
 
     mat3 normalMatrix = transpose(inverse(mat3(model)));
 
-    vs_out.Normal = normalMatrix * normal;
-    vs_out.Tangent = normalMatrix * tangent;
-    vs_out.BiTangent = normalMatrix * bitangent;
+//    vs_out.Normal = normalMatrix * normal;
+//    vs_out.Tangent = normalMatrix * tangent;
+//    vs_out.BiTangent = normalMatrix * bitangent;
+    vs_out.Normal = mat3(model) * normal;
+    vs_out.Tangent = mat3(model) * tangent;
+    vs_out.BiTangent = bitangent;
 
 }
