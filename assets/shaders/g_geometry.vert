@@ -25,36 +25,13 @@ uniform mat4 model;
 
 void main()
 {
-//    mat4 mv_matrix = transform.view * model;
-//    gl_Position = transform.projection * mv_matrix * vec4(position, 1.0f);
-//
-//    vs_out.FragPos = (model * vec4(position,1.0f)).xyz;
-//    vs_out.Normal = mat3(model) * normal;
-//    vs_out.Tangent = tangent;
-//    vs_out.BiTangent = bitangent;
-//    vs_out.TexCoords = texCoords;
-
 
     vec4 worldPos = model * vec4(position, 1.0f);
-//    vs_out.FragPos = worldPos.xyz;
-//
-//    mat4 mv_matrix = transform.view * model;
-//    gl_Position = transform.projection * mv_matrix * vec4(position, 1.0f);
-//    vs_out.Normal = (mat3(model) * position * normal);
-//
-////    mat3 normalMatrix = transpose(inverse(mat3(model)));
-////
-//    vs_out.Normal = normalMatrix * normal;
-//    vs_out.Normal = normal;
-//    vs_out.Tangent = tangent;
-//    vs_out.BiTangent = bitangent;
-//    vs_out.TexCoords = texCoords;
-
 
     vs_out.FragPos = worldPos.xyz;
     gl_Position = transform.projection * transform.view * worldPos;
     vs_out.TexCoords = texCoords;
-//
+
     mat3 normalMatrix = transpose(inverse(mat3(model)));
 
     vs_out.Normal = normalMatrix * normal;

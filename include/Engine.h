@@ -72,6 +72,7 @@ namespace rengine {
         bool setup_camera();
         GLfloat light_linear_factor_;
         GLfloat light_quadratic_factor_;
+        static GLuint show_normals_;
 
 
         Camera camera_;

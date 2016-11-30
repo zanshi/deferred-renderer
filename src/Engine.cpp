@@ -17,6 +17,7 @@ namespace rengine {
     double Engine::last_y;
     bool Engine::keys_[1024];
     bool Engine::first_mouse_movement_;
+    GLuint Engine::show_normals_;
 
     Engine::Engine(int width, int height)
             : window_width_{width}, window_height_{height} {
@@ -81,7 +82,7 @@ namespace rengine {
         glfwSetKeyCallback(window_, key_callback);
         glfwSetCursorPosCallback(window_, mouse_callback);
 
-        glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+//        glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK) {
@@ -93,6 +94,9 @@ namespace rengine {
 
         glfwGetFramebufferSize(window_, &window_width_, &window_height_);
         glViewport(0, 0, window_width_, window_height_);
+
+
+        show_normals_ = 1;
 
         return true;
 
@@ -269,6 +273,9 @@ namespace rengine {
 
         lighting_shader.use();
 
+        glUniform1ui(glGetUniformLocation(lighting_shader.program_, "showNormals"), show_normals_);
+
+
         // Lights
         // -------------------------------------------------------------------------------------------
 
@@ -287,10 +294,12 @@ namespace rengine {
 
         // Distance 13
 
+        const GLuint phase = 40;
+
         // TODO do it more like in the OpenGL superbible, seems way more efficient
         for (int i = 0; i < lightPositions.size(); i++) {
 
-            const glm::vec3 pos = glm::rotateZ(lightPositions[i], temp_time);
+            const glm::vec3 pos = glm::rotateZ(lightPositions[i], temp_time + phase * i);
 
 
 //            const glm::vec3 pos(lightPositions[i].x, lightPositions[i].y, lightPositions[i].z * rot * (i+1));
@@ -371,7 +380,7 @@ namespace rengine {
 
     bool Engine::load_scene() {
 
-        models_.push_back(Model{"../assets/models/nano/nanosuit.obj"});
+//        models_.push_back(Model{"../assets/models/nano/nanosuit.obj"});
 //        models_.push_back(Model{"../assets/bible/objects/dragon.sbm"});
 //        models_.push_back(Model{"../assets/models/blender/Blenderman.dae"});
 //        models_.push_back(Model{"../assets/models/e.dae"});
@@ -384,6 +393,7 @@ namespace rengine {
 //        models_.push_back(Model{"../assets/models/crytek/sponza.obj"});
 //        models_.push_back(Model{"../assets/models/cyborg/Cyborg.obj"});
 //        models_.push_back(Model{"../assets/models/head/head.OBJ"});
+        models_.push_back(Model{"../assets/models/sponza2/sponza.dae"});
 
         return true;
 
@@ -431,6 +441,10 @@ namespace rengine {
         if (keys_[GLFW_KEY_6]) {
             light_linear_factor_ = 0.012f;
             light_quadratic_factor_ = 0.0007f;
+        }
+
+        if (keys_[GLFW_KEY_SPACE]) {
+            show_normals_ = (show_normals_ == 1) ? 0 : 1;
         }
 
 

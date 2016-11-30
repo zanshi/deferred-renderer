@@ -72,6 +72,11 @@ include_directories(${VENDOR_DIR}/glm/include)
 include_directories(${VENDOR_DIR}/stb/include)
 
 # ///////////////////////////////////////////////////
+# GLI
+include_directories(${VENDOR_DIR}/gli/include)
+
+
+# ///////////////////////////////////////////////////
 # GLEW
 add_definitions(-DGLEW_STATIC)
 

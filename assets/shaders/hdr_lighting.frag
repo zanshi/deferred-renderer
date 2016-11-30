@@ -1,4 +1,7 @@
 #version 410 core
+
+
+
 layout(location = 0) out vec4 FragColor;
 layout(location = 1) out vec4 BrightColor;
 
@@ -21,6 +24,8 @@ const int NR_LIGHTS = 32;
 uniform Light lights[NR_LIGHTS];
 uniform vec3 viewPos;
 
+uniform uint showNormals = 1;
+
 // HDR bloom
 const float bloom_thresh_min = 0.8;
 const float bloom_thresh_max = 1.2;
@@ -37,17 +42,11 @@ void main()
     vec4 temp = texelFetch(gAlbedoSpec, ivec2(tex_coord), 0);
 
     vec3 Diffuse = temp.rgb;
-//    Diffuse = vec3(0.0);
     float Specular = temp.a;
-
-//    vec3 FragPos = texture(gPosition, tex_coord).rgb;
-//    vec3 Normal = texture(gNormal, tex_coord).rgb;
-//    vec3 Diffuse = texture(gAlbedoSpec, tex_coord).rgb;
-//    float Specular = texture(gAlbedoSpec, tex_coord).a;
 
     // Then calculate lighting as usual
     vec3 lighting  = Diffuse * 0.1; // hard-coded ambient component
-//    vec3 lighting  = vec3(0.0, 0.0, 0.0);
+//    vec3 lighting  = vec3(0.0);
     vec3 viewDir  = normalize(viewPos - FragPos);
     for(int i = 0; i < NR_LIGHTS; ++i)
     {
@@ -71,9 +70,7 @@ void main()
         lighting += diffuse + specular;
     }
 
-    FragColor = vec4(lighting, 1.0);
-//    FragColor = vec4(Normal, 1.0);
-
+    FragColor = vec4(mix(Normal, lighting, showNormals), 1.0);
 
 
     // ------------------------
