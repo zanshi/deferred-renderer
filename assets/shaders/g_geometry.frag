@@ -28,8 +28,8 @@ void main()
 //    if( textureSize( texture_normal1, 0).x > 0) {
         vec3 N = normalize(fs_in.Normal);
         vec3 T = normalize(fs_in.Tangent);
-        vec3 B = normalize(fs_in.BiTangent);
-//    vec3 B = normalize(cross(N, T));
+//        vec3 B = normalize(fs_in.BiTangent);
+    vec3 B = normalize(cross(N, T));
 
         mat3 TBN = mat3(T,B,N);
         vec3 nm = texture(texture_normal1, fs_in.TexCoords).xyz * 2.0 - vec3(1.0);
@@ -47,7 +47,7 @@ void main()
 //    if(nm != vec3(-1.0))
 //    gNormal = normalize(nm);
 //    else
-    gNormal = normalize(nm);
+    gNormal = nm;
     // And the diffuse per-fragment color
     gAlbedoSpec.rgb = texture(texture_diffuse1, fs_in.TexCoords).rgb;
     // Store specular intensity in gAlbedoSpec's alpha component

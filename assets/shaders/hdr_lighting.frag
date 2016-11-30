@@ -1,7 +1,5 @@
 #version 410 core
 
-
-
 layout(location = 0) out vec4 FragColor;
 layout(location = 1) out vec4 BrightColor;
 
@@ -70,9 +68,6 @@ void main()
         lighting += diffuse + specular;
     }
 
-    FragColor = vec4(mix(Normal, lighting, showNormals), 1.0);
-
-
     // ------------------------
     /// HDR
 
@@ -83,5 +78,12 @@ void main()
     // the second output
     lighting = lighting * 4.0 * smoothstep(bloom_thresh_min, bloom_thresh_max, Y);
     BrightColor = vec4(lighting, 1.0);
+
+    if(showNormals == 1) {
+        FragColor = vec4(Normal, 1.0);
+        BrightColor = vec4(0.0);
+    } else {
+        FragColor = vec4(lighting, 1.0);
+    }
 
 }
