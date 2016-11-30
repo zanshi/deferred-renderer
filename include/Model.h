@@ -12,6 +12,7 @@
 namespace rengine {
 
     GLuint TextureFromFile(const char* path, std::string directory);
+    std::string get_file_extension(const std::string& filename);
 
     class Model {
     public:
@@ -39,6 +40,9 @@ namespace rengine {
 
         std::vector<Texture> load_material_textures(aiMaterial* mat, aiTextureType type,
                 std::string type_name);
+
+
+        GLuint create_texture(char const* Filename); // From gli example
 
     };
 
