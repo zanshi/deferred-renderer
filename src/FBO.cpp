@@ -18,7 +18,7 @@ namespace rengine {
         glGenTextures(nr_textures, textures_.data());
         std::vector<GLenum> attachments;
 
-        for( GLuint i = 0; i < nr_textures; i++ ) {
+        for (GLuint i = 0; i < nr_textures; i++) {
             glBindTexture(GL_TEXTURE_2D, textures_[i]);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width_, height_, 0, GL_RGB, GL_FLOAT, nullptr);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -43,33 +43,6 @@ namespace rengine {
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             std::cout << "Framebuffer not complete!" << std::endl;
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-//        glGenTextures(1, &tex_scene_);
-//        glBindTexture(GL_TEXTURE_2D, tex_scene_);
-//        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width_, height_, 0, GL_RGB, GL_FLOAT, nullptr);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-//        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex_scene_, 0);
-//
-//        glGenTextures(1, &tex_brightpass_);
-//        glBindTexture(GL_TEXTURE_2D, tex_brightpass_);
-//        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width_, height_, 0, GL_RGB, GL_FLOAT, nullptr);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-//        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, tex_brightpass_, 0);
-//
-//        glGenRenderbuffers(1, &tex_depth_);
-//        glBindRenderbuffer(GL_RENDERBUFFER, tex_depth_);
-//        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width_, height_);
-//        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, tex_depth_);
-//
-//        static const GLenum buffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
-//        glDrawBuffers(2, buffers);
-//
-//
-//        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-//            std::cout << "Framebuffer not complete!" << std::endl;
-//        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     }
 

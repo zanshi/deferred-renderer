@@ -70,6 +70,8 @@ namespace rengine {
                 ss << normalNr++;
             number = ss.str();
 
+//            std::cout << (name + number).c_str() << std::endl;
+
             glUniform1i(glGetUniformLocation(current_program, (name + number).c_str()), i);
             glBindTexture(GL_TEXTURE_2D, textures_[i].id);
         }
