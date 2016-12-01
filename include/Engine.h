@@ -87,20 +87,20 @@ namespace rengine {
                                    const std::vector<glm::vec3> &lightColors, const GBuffer &gbuffer, const FBO &render_fbo,
                                    const Quad &quad) const;
 
-        void geometry_pass(Shader &g_geometry_shader, const GBuffer &gbuffer) const;
+        void geometry_pass(const Shader &g_geometry_shader, const GBuffer &gbuffer, const GLuint ubo_transforms) const;
 
         void bloom_pass(const FBO &render_fbo, const std::array<FBO, 2> &filter_fbos, const Shader &shader_filter,
                                 const Shader &shader_combine, const Quad &quad) const;
 
         void handle_input(float delta_time);
 
-        void update_camera(GLuint ubo_transforms);
+        void update_camera(GLuint ubo_transforms) const;
 
         void update_lights(std::vector<glm::vec3> &light_positions, GLfloat time);
 
         void update_window_title(const GLfloat time) const;
 
-        void setup_lights(std::vector<glm::vec3> &light_positions, std::vector<glm::vec3> &light_colors);
+        void setup_lights(std::vector<glm::vec3> &light_positions, std::vector<glm::vec3> &light_colors, GLfloat time);
 
 
     };

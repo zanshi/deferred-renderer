@@ -6,7 +6,7 @@
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/rotate_vector.hpp>
-#include <array>
+#include <random>
 #include <stdlib.h>
 
 namespace rengine {
@@ -82,7 +82,7 @@ namespace rengine {
         glfwSetKeyCallback(window_, key_callback);
         glfwSetCursorPosCallback(window_, mouse_callback);
 
-//        glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK) {
@@ -103,10 +103,34 @@ namespace rengine {
     }
 
     bool Engine::enable_gl_features() {
-//    glEnable(GL_DEPTH_TEST);
+
+//        glEnable(GL_DEPTH_TEST);
 
         return true;
     }
+
+    bool Engine::load_scene() {
+
+//        models_.push_back(Model{"../assets/models/nano/nanosuit.obj"});
+//        models_.push_back(Model{"../assets/bible/objects/dragon.sbm"});
+//        models_.push_back(Model{"../assets/models/blender/Blenderman.dae"});
+//        models_.push_back(Model{"../assets/models/e.dae"});
+//        models_.push_back(Model{"../assets/models/bmw/bmw.obj"});
+//        models_.push_back(Model{"../assets/models/cottage/Snow covered CottageFBX.fbx"});
+//        models_.push_back(Model{"../assets/models/bmx/bmx.obj"});
+//        models_.push_back(Model{"../assets/models/city/Scifi Floating City/Scifi Floating City.obj"});
+//        models_.push_back(Model{"../assets/models/bathroom/BathroomSet02.obj"});
+//        models_.push_back(Model{"../assets/models/rungholt/rungholt.obj"});
+//        models_.push_back(Model{"../assets/models/crytek/sponza.obj"});
+//        models_.push_back(Model{"../assets/models/cyborg/Cyborg.obj"});
+//        models_.push_back(Model{"../assets/models/head/head.OBJ"});
+        models_.push_back(Model{"../assets/models/sponza2/sponza.dae"});
+//        models_.push_back(Model{"../assets/models/crytek-sponza/sponza.obj"});
+
+        return true;
+
+    }
+
 
     bool Engine::setup_camera() {
         camera_ = Camera{glm::vec3(0.0f, 0.0f, 4.0f)};
@@ -123,7 +147,7 @@ namespace rengine {
     void Engine::run() {
 
         // Create and compile shaders
-        auto geometry_shader = Shader{"../assets/shaders/g_geometry.vert", "../assets/shaders/g_geometry.frag"};
+        auto geometry_shader = Shader{"../assets/shaders/geometry.vert", "../assets/shaders/geometry.frag"};
         auto lighting_shader = Shader{"../assets/shaders/hdr_lighting.vert", "../assets/shaders/hdr_lighting.frag"};
         auto filter_shader = Shader{"../assets/shaders/gaussian_blur.vert", "../assets/shaders/gaussian_blur.frag"};
         auto combine_bloom_shader = Shader{"../assets/shaders/bloom_combine.vert",
@@ -139,8 +163,7 @@ namespace rengine {
         // - Colors
         std::vector<glm::vec3> light_positions;
         std::vector<glm::vec3> light_colors;
-
-        setup_lights(light_positions, light_colors);
+        setup_lights(light_positions, light_colors, 0);
 
         // Use the GBuffer geometry shader
         geometry_shader.use();
@@ -155,14 +178,13 @@ namespace rengine {
         glGenBuffers(1, &ubo_transforms);
 
         glBindBuffer(GL_UNIFORM_BUFFER, ubo_transforms);
-        glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr, GL_STATIC_DRAW);
+        glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
         glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo_transforms, 0, 2 * sizeof(glm::mat4));
 
         // ------------------------------------------------------------------------------------
-        // Set up framebuffers...
-        // FBO objects?
+        // Set up framebuffers
 
         const auto gbuffer = GBuffer{window_width_, window_height_};
         const auto render_fbo = FBO{window_width_, window_height_, 2, true};
@@ -172,15 +194,14 @@ namespace rengine {
         // Create quad for rendering the final image
         auto quad = Quad{};
 
-//        quad_ = Quad{};
-
-
         // ------------------------------------------------------------------------------------
 
         GLfloat current_frame_time = 0.0f;
         GLfloat delta_time = 0.0f;
         GLfloat last_frame_time = 0.0f;
 
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
         while (!glfwWindowShouldClose(window_)) {
@@ -199,20 +220,16 @@ namespace rengine {
             glfwPollEvents();
             handle_input(delta_time);
 
-            glViewport(0, 0, window_width_, window_height_);
-
-            // CAMERA
-            geometry_shader.use();
-            update_camera(ubo_transforms);
-
             // LIGHTS
-            update_lights(light_positions, current_frame_time);
+//            update_lights(light_positions, current_frame_time);
 
             // ------------------------------------------------------
             // RENDERING
 
+            glViewport(0, 0, window_width_, window_height_);
+
             // Geometry pass
-            geometry_pass(geometry_shader, gbuffer);
+            geometry_pass(geometry_shader, gbuffer, ubo_transforms);
 
             // Lighting pass TODO Refactor to not use as many parameters
             lighting_pass(camera_, lighting_shader, light_positions, light_colors, gbuffer, render_fbo,
@@ -227,37 +244,89 @@ namespace rengine {
 
     }
 
+    void Engine::setup_lights(std::vector<glm::vec3> &light_positions,
+                              std::vector<glm::vec3> &light_colors,
+                              GLfloat time) {
+        const GLuint NR_LIGHTS = 32;
 
-    void Engine::geometry_pass(Shader &g_geometry_shader, const GBuffer &gbuffer) const {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<> dis(0, 1);
+
+        light_linear_factor_ = 0.35;
+        light_quadratic_factor_ = 0.44;
+
+        for (GLuint i = 0; i < NR_LIGHTS; i++) {
+//
+//
+//            float i_f = ((float) i - 7.5f) * 0.1f + 0.3f;
+//            // t = 0.0f;
+//            light_positions[i] = glm::vec3(100.0f * std::sin(time * 1.1f + (5.0f * i_f)) * std::cos(time * 2.3f + (9.0f * i_f)),
+//                                          15.0f,
+//                                          100.0f * std::sin(time * 1.5f + (6.0f * i_f)) * std::cos(time * 1.9f + (11.0f *
+//                                                                                                    i_f))); // 300.0f * std::sin(time * i_f * 0.7f) * std::cos(time * i_f * 0.9f) - 600.0f);
+//            light_colors[i] = glm::vec3(std::cos(i_f * 14.0f) * 0.5f + 0.8f,
+//                                          std::sin(i_f * 17.0f) * 0.5f + 0.8f,
+//                                          std::sin(i_f * 13.0f) * std::cos(i_f * 19.0f) * 0.5f + 0.8f);
+
+
+            // Calculate slightly random offsets
+//            GLfloat xPos = static_cast<GLfloat>(dis(gen) * 6.0f - 3.0f);
+//            GLfloat yPos = static_cast<GLfloat>(dis(gen) * 6.0f - 3.0f + 4.0f);
+//            GLfloat zPos = static_cast<GLfloat>(dis(gen) * 6.0f - 3.0f);
+//            GLfloat xPos = 0.1f * i * 6.0f - 3.0f;
+            GLfloat xPos = 0.0;
+            GLfloat yPos = 0.1f * i * 6.0f - 3.0f;
+            GLfloat zPos = 0.1f * i * 6.0f - 3.0f;
+            light_positions.push_back(glm::vec3(xPos, yPos, zPos));
+
+            light_positions[i] = light_positions[i] * 10.0f;
+
+            // Also calculate random color
+            GLfloat rColor = static_cast<GLfloat>(dis(gen) / 2.0f + 0.5f); // Between 0.5 and 1.0
+            GLfloat gColor = static_cast<GLfloat>(dis(gen) / 2.0f + 0.5f); // Between 0.5 and 1.0
+            GLfloat bColor = static_cast<GLfloat>(dis(gen) / 2.0f + 0.5f); // Between 0.5 and 1.0
+//            GLfloat rColor = 1.0f - 0.01f * i; // Between 0.5 and 1.0
+//            GLfloat gColor = 1.0f - 0.02f * i; // Between 0.5 and 1.0
+//            GLfloat bColor = 1.0f - 0.03f * i; // Between 0.5 and 1.0
+//            std::cout << rColor << std::endl;
+            light_colors.push_back(glm::vec3(rColor, gColor, bColor));
+        }
+    }
+
+
+    void Engine::geometry_pass(const Shader &g_geometry_shader, const GBuffer &gbuffer,
+                               const GLuint ubo_transforms) const {
 
         gbuffer.bind_for_geometry_pass();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         g_geometry_shader.use();
+
         glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LEQUAL);
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
+//        glDepthFunc(GL_LEQUAL);
+//        glEnable(GL_CULL_FACE);
+//        glCullFace(GL_BACK);
+
+        // CAMERA
+        update_camera(ubo_transforms);
 
         // Draw the loaded model
         glm::mat4 model;
-        model = glm::translate(model,
-                               glm::vec3(0.0f, -3.0f,
-                                         0.0f)); // Translate it down a bit so it's at the center of the scene
+//        model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
 //        model = glm::scale(model, glm::vec3(0.25f));    // It's a bit too big for our scene, so scale it down
-        model = glm::scale(model, glm::vec3(0.25f));    // It's a bit too big for our scene, so scale it down
-//        model = glm::scale(model, glm::vec3(4.0f));    // It's a bit too big for our scene, so scale it down
         glUniformMatrix4fv(glGetUniformLocation(g_geometry_shader.program_, "model"), 1, GL_FALSE,
                            glm::value_ptr(model));
 
         // Render the scene. (Also binds relevant textures)
         render_scene(g_geometry_shader.program_);
 
-        glDisable(GL_CULL_FACE);
+//        glDisable(GL_CULL_FACE);
         glDisable(GL_DEPTH_TEST);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
+
 
     void Engine::lighting_pass(const Camera &camera, const Shader &lighting_shader,
                                const std::vector<glm::vec3> &lightPositions,
@@ -279,27 +348,25 @@ namespace rengine {
         // Lights
         // -------------------------------------------------------------------------------------------
 
-        const float temp_time = static_cast<float>(glfwGetTime());
-//        const float cosrot = cosf(temp_time);
-        // Update attenuation parameters and calculate radius
-        // Distance 200
-//        const GLfloat linear = 0.022;
-//        const GLfloat quadratic = 0.0019;
-
-        // Distance 100
-//        const GLfloat linear = 0.045;
-//        const GLfloat quadratic = 0.0075;
-
-        // Distance 20
-
-        // Distance 13
+        const float time = static_cast<float>(glfwGetTime() * 0.1);
 
         const GLuint phase = 40;
 
         // TODO do it more like in the OpenGL superbible, seems way more efficient
         for (int i = 0; i < lightPositions.size(); i++) {
 
-            const glm::vec3 pos = glm::rotateZ(lightPositions[i], temp_time + phase * i);
+            float i_f = ((float) i - 7.5f) * 0.1f + 0.3f;
+            // t = 0.0f;
+            const glm::vec3 pos = glm::vec3(100.0f * std::sin(time * 1.1f + (5.0f * i_f)) * std::cos(time * 2.3f + (9.0f * i_f)),
+                                           15.0f,
+                                           100.0f * std::sin(time * 1.5f + (6.0f * i_f)) * std::cos(time * 1.9f + (11.0f *
+                                                                                                                   i_f))); // 300.0f * std::sin(time * i_f * 0.7f) * std::cos(time * i_f * 0.9f) - 600.0f);
+            const glm::vec3 color = glm::vec3(std::cos(i_f * 14.0f) * 0.5f + 0.8f,
+                                        std::sin(i_f * 17.0f) * 0.5f + 0.8f,
+                                        std::sin(i_f * 13.0f) * std::cos(i_f * 19.0f) * 0.5f + 0.8f);
+
+//            const glm::vec3 pos = glm::rotateY(lightPositions[i], temp_time + phase * i);
+//            const glm::vec3 pos = lightPositions[i];
 
 
 //            const glm::vec3 pos(lightPositions[i].x, lightPositions[i].y, lightPositions[i].z * rot * (i+1));
@@ -310,17 +377,26 @@ namespace rengine {
             glUniform3fv(
                     glGetUniformLocation(lighting_shader.program_, ("lights[" + std::to_string(i) + "].Color").c_str()),
                     1,
-                    glm::value_ptr(lightColors[i]));
+                    glm::value_ptr(color));
 
             glUniform1f(glGetUniformLocation(lighting_shader.program_,
-                                             ("lights[" + std::to_string(i) + "].Linear").c_str()), light_linear_factor_);
+                                             ("lights[" + std::to_string(i) + "].Linear").c_str()),
+                        light_linear_factor_);
             glUniform1f(glGetUniformLocation(lighting_shader.program_,
-                                             ("lights[" + std::to_string(i) + "].Quadratic").c_str()), light_quadratic_factor_);
+                                             ("lights[" + std::to_string(i) + "].Quadratic").c_str()),
+                        light_quadratic_factor_);
         }
 
         glUniform3fv(glGetUniformLocation(lighting_shader.program_, "viewPos"), 1, glm::value_ptr(camera.Position));
 
         quad.draw();
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
     }
 
@@ -350,6 +426,11 @@ namespace rengine {
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
 
 
         //-----------------------------------------------
@@ -374,28 +455,12 @@ namespace rengine {
 
         glBindVertexArray(0);
 
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
-    }
-
-
-    bool Engine::load_scene() {
-
-//        models_.push_back(Model{"../assets/models/nano/nanosuit.obj"});
-//        models_.push_back(Model{"../assets/bible/objects/dragon.sbm"});
-//        models_.push_back(Model{"../assets/models/blender/Blenderman.dae"});
-//        models_.push_back(Model{"../assets/models/e.dae"});
-//        models_.push_back(Model{"../assets/models/bmw/bmw.obj"});
-//        models_.push_back(Model{"../assets/models/cottage/Snow covered CottageFBX.fbx"});
-//        models_.push_back(Model{"../assets/models/bmx/bmx.obj"});
-//        models_.push_back(Model{"../assets/models/city/Scifi Floating City/Scifi Floating City.obj"});
-//        models_.push_back(Model{"../assets/models/bathroom/BathroomSet02.obj"});
-//        models_.push_back(Model{"../assets/models/rungholt/rungholt.obj"});
-//        models_.push_back(Model{"../assets/models/crytek/sponza.obj"});
-//        models_.push_back(Model{"../assets/models/cyborg/Cyborg.obj"});
-//        models_.push_back(Model{"../assets/models/head/head.OBJ"});
-        models_.push_back(Model{"../assets/models/sponza2/sponza.dae"});
-
-        return true;
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     }
 
@@ -403,7 +468,6 @@ namespace rengine {
         for (auto &&model : models_) {
             model.draw(shader_program);
         }
-
     }
 
 
@@ -448,59 +512,26 @@ namespace rengine {
         }
 
 
-
-
-
     }
 
-    void Engine::update_camera(GLuint ubo_transforms) {
+    void Engine::update_camera(GLuint ubo_transforms) const {
 
         // Set up the projection matrix and feed the data to the uniform block object
         glm::mat4 projection = glm::perspective(camera_.Zoom, (GLfloat) window_width_ / (GLfloat) window_height_, 0.1f,
                                                 1000.0f);
         glBindBuffer(GL_UNIFORM_BUFFER, ubo_transforms);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection));
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+//        glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
         // To the same for the view matrix
-        // TODO refactor this to a update_camera function
         glm::mat4 view = camera_.GetViewMatrix();
-        glBindBuffer(GL_UNIFORM_BUFFER, ubo_transforms);
+//        glBindBuffer(GL_UNIFORM_BUFFER, ubo_transforms);
         glBufferSubData(
                 GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(view));
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     }
 
-    void Engine::setup_lights(std::vector<glm::vec3> &light_positions, std::vector<glm::vec3> &light_colors) {
-        const GLuint NR_LIGHTS = 32;
-        srand(13);
-
-        light_linear_factor_ = 0.35;
-        light_quadratic_factor_ = 0.44;
-
-        for (GLuint i = 0; i < NR_LIGHTS; i++) {
-            // Calculate slightly random offsets
-//            GLfloat xPos = ((rand() % 100) / 100.0f) * 6.0f - 3.0f;
-//            GLfloat yPos = ((rand() % 100) / 100.0f) * 6.0f - 3.0f + 4.0f;
-//            GLfloat zPos = ((rand() % 100) / 100.0f) * 6.0f - 3.0f;
-            GLfloat xPos = 0.1f * i * 6.0f - 3.0f;
-            GLfloat yPos = 0.1f * i * 6.0f - 3.0f;
-            GLfloat zPos = 0.1f * i * 6.0f - 3.0f;
-            light_positions.push_back(glm::vec3(xPos, yPos, zPos));
-
-            light_positions[i] = light_positions[i] * 10.0f;
-
-            // Also calculate random color
-//            GLfloat rColor = ((rand() % 100) / 200.0f) + 0.5f; // Between 0.5 and 1.0
-//            GLfloat gColor = ((rand() % 100) / 200.0f) + 0.5f; // Between 0.5 and 1.0
-//            GLfloat bColor = ((rand() % 100) / 200.0f) + 0.5f; // Between 0.5 and 1.0
-            GLfloat rColor = 1.0f - 0.01f * i; // Between 0.5 and 1.0
-            GLfloat gColor = 1.0f - 0.02f * i; // Between 0.5 and 1.0
-            GLfloat bColor = 1.0f - 0.03f * i; // Between 0.5 and 1.0
-            light_colors.push_back(glm::vec3(rColor, gColor, bColor));
-        }
-    }
 
     void Engine::update_lights(std::vector<glm::vec3> &light_positions, GLfloat time) {
 
@@ -549,19 +580,12 @@ namespace rengine {
 
     void Engine::update_window_title(const GLfloat t) const {
 
-//        const float fps = 1000.0f / frametime;
-//        char titlestring[200];
-//        sprintf(titlestring, "Deferred renderer, %.2f ms/frame (%.1f FPS)", frametime, fps);
-//        glfwSetWindowTitle(window_, titlestring);
-
         static double t0 = 0.0;
         static int frames = 0;
         static double fps = 0.0;
         static double frametime = 0.0;
         static char titlestring[200];
 
-        // Get current time
-//        t = glfwGetTime();  // Gets number of seconds since glfwInit()
         // If one second has passed, or if this is the very first frame
         if ((t - t0) > 1.0 || frames == 0) {
             fps = (double) frames / (t - t0);

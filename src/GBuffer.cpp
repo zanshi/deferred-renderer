@@ -52,17 +52,9 @@ namespace rengine {
 
     GBuffer::~GBuffer() {}
 
-    void GBuffer::bind_read() const {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, g_buffer_);
+    void GBuffer::bind() const {
+        glBindFramebuffer(GL_FRAMEBUFFER, g_buffer_);
         glViewport(0, 0, width_, height_);
-    }
-
-    void GBuffer::bind_draw() const {
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, g_buffer_);
-    }
-
-    void GBuffer::set_read_buffer(GBUFFER_TEXTURE_TYPE texture_type) const {
-        glReadBuffer(GL_COLOR_ATTACHMENT0 + texture_type);
     }
 
     void GBuffer::bind_for_lighting_pass() const {
@@ -78,7 +70,7 @@ namespace rengine {
     }
 
     void GBuffer::bind_for_geometry_pass() const {
-        bind_draw();
+        bind();
     }
 
 }

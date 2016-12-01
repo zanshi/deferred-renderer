@@ -18,22 +18,21 @@
 namespace rengine {
 
     void Model::draw(GLuint current_program) const {
-
         for (auto &&mesh : meshes_) {
             mesh.draw(current_program);
         }
-
     }
 
     void Model::load_model(std::string path) {
 
         // Read file via ASSIMP
         Assimp::Importer importer;
-        const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs |
-                                                       aiProcess_CalcTangentSpace | aiProcess_GenNormals);
+//        const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs |
+//                                                       aiProcess_CalcTangentSpace | aiProcess_GenNormals  );
 
 //        const aiScene *scene = aiImportFile(path.c_str(), aiProcessPreset_TargetRealtime_Fast);
-//        const aiScene *scene = importer.ReadFile(path, aiProcessPreset_TargetRealtime_MaxQuality);
+        const aiScene *scene = importer.ReadFile(path, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_FlipUVs);
+//        const aiScene *scene = importer.ReadFile(path, aiProcess_FlipWindingOrder | aiProcess_CalcTangentSpace);
 
         // Check for errors
         if (!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
@@ -68,8 +67,8 @@ namespace rengine {
         std::vector<GLuint> indices;
         std::vector<Texture> textures;
 
-        bool has_uv = mesh->HasTextureCoords(0);
-        bool has_tangent = mesh->HasTangentsAndBitangents();
+        const bool has_uv = mesh->HasTextureCoords(0);
+        const bool has_tangent = mesh->HasTangentsAndBitangents();
 
         // Walk through each of the mesh's vertices
         for (GLuint i = 0; i < mesh->mNumVertices; i++) {
@@ -112,7 +111,7 @@ namespace rengine {
                                                                               "texture_specular");
             textures.insert(textures.end(), specular_maps.begin(), specular_maps.end());
 
-            std::vector<Texture> normal_maps = load_material_textures(material, aiTextureType_HEIGHT,
+            std::vector<Texture> normal_maps = load_material_textures(material, aiTextureType_NORMALS,
                                                                       "texture_normal");
             textures.insert(textures.end(), normal_maps.begin(), normal_maps.end());
         }
@@ -163,13 +162,17 @@ namespace rengine {
 
 
     /// Filename can be KTX or DDS files
-    GLuint Model::create_texture(char const* Filename)
-    {
+    GLuint Model::create_texture(char const* Filename) {
         std::string path = this->directory_ + std::string(Filename);
 
+        std::cout << path << std::endl;
+
         gli::texture Texture = gli::load(path);
-        if(Texture.empty())
+        if (Texture.empty()) {
+            std::cout << "Failed to load " << path << std::endl;
             return 0;
+        }
+
 
         gli::gl GL(gli::gl::PROFILE_GL33);
         gli::gl::format const Format = GL.translate(Texture.format(), Texture.swizzles());
@@ -188,8 +191,7 @@ namespace rengine {
         glm::tvec3<GLsizei> const Extent(Texture.extent());
         GLsizei const FaceTotal = static_cast<GLsizei>(Texture.layers() * Texture.faces());
 
-        switch(Texture.target())
-        {
+        switch (Texture.target()) {
             case gli::TARGET_1D:
                 glTexStorage1D(
                         Target, static_cast<GLint>(Texture.levels()), Format.Internal, Extent.x);
@@ -200,6 +202,8 @@ namespace rengine {
                 glTexStorage2D(
                         Target, static_cast<GLint>(Texture.levels()), Format.Internal,
                         Extent.x, Texture.target() == gli::TARGET_2D ? Extent.y : FaceTotal);
+//                glTexImage2D(Target,static_cast<GLint>(Texture.levels()),Format.Internal, Extent.x, Extent.y, 0, Format.External, )
+//                glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, image);
                 break;
             case gli::TARGET_2D_ARRAY:
             case gli::TARGET_3D:
@@ -214,20 +218,18 @@ namespace rengine {
                 break;
         }
 
-        for(std::size_t Layer = 0; Layer < Texture.layers(); ++Layer)
-            for(std::size_t Face = 0; Face < Texture.faces(); ++Face)
-                for(std::size_t Level = 0; Level < Texture.levels(); ++Level)
-                {
+        for (std::size_t Layer = 0; Layer < Texture.layers(); ++Layer)
+            for (std::size_t Face = 0; Face < Texture.faces(); ++Face)
+                for (std::size_t Level = 0; Level < Texture.levels(); ++Level) {
                     GLsizei const LayerGL = static_cast<GLsizei>(Layer);
                     glm::tvec3<GLsizei> Extent(Texture.extent(Level));
                     Target = gli::is_target_cube(Texture.target())
                              ? static_cast<GLenum>(GL_TEXTURE_CUBE_MAP_POSITIVE_X + Face)
                              : Target;
 
-                    switch(Texture.target())
-                    {
+                    switch (Texture.target()) {
                         case gli::TARGET_1D:
-                            if(gli::is_compressed(Texture.format()))
+                            if (gli::is_compressed(Texture.format()))
                                 glCompressedTexSubImage1D(
                                         Target, static_cast<GLint>(Level), 0, Extent.x,
                                         Format.Internal, static_cast<GLsizei>(Texture.size(Level)),
@@ -241,7 +243,7 @@ namespace rengine {
                         case gli::TARGET_1D_ARRAY:
                         case gli::TARGET_2D:
                         case gli::TARGET_CUBE:
-                            if(gli::is_compressed(Texture.format()))
+                            if (gli::is_compressed(Texture.format()))
                                 glCompressedTexSubImage2D(
                                         Target, static_cast<GLint>(Level),
                                         0, 0,
@@ -261,7 +263,7 @@ namespace rengine {
                         case gli::TARGET_2D_ARRAY:
                         case gli::TARGET_3D:
                         case gli::TARGET_CUBE_ARRAY:
-                            if(gli::is_compressed(Texture.format()))
+                            if (gli::is_compressed(Texture.format()))
                                 glCompressedTexSubImage3D(
                                         Target, static_cast<GLint>(Level),
                                         0, 0, 0,
@@ -278,9 +280,12 @@ namespace rengine {
                                         Format.External, Format.Type,
                                         Texture.data(Layer, Face, Level));
                             break;
-                        default: assert(0); break;
+                        default:
+                            assert(0);
+                            break;
                     }
                 }
+
         return TextureName;
     }
 
@@ -289,8 +294,8 @@ namespace rengine {
         //Generate texture ID and load texture data
         std::string filename = std::string(path);
         std::cout << filename << std::endl;
-//        filename = directory + '/' + filename;
-        filename = directory + filename;
+        filename = directory + '/' + filename;
+//        filename = directory + filename;
         GLuint textureID;
         glGenTextures(1, &textureID);
         int width, height, channels;

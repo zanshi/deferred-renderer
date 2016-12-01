@@ -3,8 +3,6 @@
 layout(location = 0) out vec4 FragColor;
 layout(location = 1) out vec4 BrightColor;
 
-//in vec2 TexCoords;
-
 uniform sampler2D gPosition;
 uniform sampler2D gNormal;
 uniform sampler2D gAlbedoSpec;
@@ -38,18 +36,22 @@ void main()
     vec3 FragPos = vec3(texelFetch(gPosition, ivec2(tex_coord),0));
     vec3 Normal = vec3(texelFetch(gNormal, ivec2(tex_coord), 0));
     vec4 temp = texelFetch(gAlbedoSpec, ivec2(tex_coord), 0);
-
     vec3 Diffuse = temp.rgb;
     float Specular = temp.a;
 
+//    vec3 FragPos = texture(gPosition, TexCoords).rgb;
+//    vec3 Normal = texture(gNormal, TexCoords).rgb;
+//    vec3 Diffuse = texture(gAlbedoSpec, TexCoords).rgb;
+//    float Specular = texture(gAlbedoSpec, TexCoords).a;
+
     // Then calculate lighting as usual
-    vec3 lighting  = Diffuse * 0.1; // hard-coded ambient component
+    vec3 lighting  = Diffuse * 0.08; // hard-coded ambient component
 //    vec3 lighting  = vec3(0.0);
     vec3 viewDir  = normalize(viewPos - FragPos);
     for(int i = 0; i < NR_LIGHTS; ++i)
     {
         // Diffuse
-//        vec3 templight = vec3(0.5f * i, 0.5 * i, 0.5 * i);
+        //        vec3 templight = vec3(0.5f * i, 0.5 * i, 0.5 * i);
         vec3 lightDir = normalize(lights[i].Position - FragPos);
         vec3 diffuse = max(dot(Normal, lightDir), 0.0) * Diffuse * lights[i].Color;
 
@@ -66,7 +68,10 @@ void main()
         diffuse *= attenuation;
         specular *= attenuation;
         lighting += diffuse + specular;
+
     }
+
+    FragColor = vec4(lighting, 1.0);
 
     // ------------------------
     /// HDR
@@ -82,8 +87,6 @@ void main()
     if(showNormals == 1) {
         FragColor = vec4(Normal, 1.0);
         BrightColor = vec4(0.0);
-    } else {
-        FragColor = vec4(lighting, 1.0);
     }
 
 }

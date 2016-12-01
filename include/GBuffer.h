@@ -27,9 +27,7 @@ public:
     void bind_for_geometry_pass() const;
     void bind_for_lighting_pass() const;
     void bind_for_final_pass() const;
-    void bind_read() const;
-    void bind_draw() const;
-    void set_read_buffer(GBUFFER_TEXTURE_TYPE texture_type) const;
+    void bind() const;
 
     GLuint tex_[3];
     GLuint position_, normal_, albedo_spec_, depth_;
