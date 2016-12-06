@@ -3,17 +3,18 @@
 //
 
 #pragma once
+
 #include <glm/vec3.hpp>
 
 namespace rengine {
 
-#pragma pack (push, 1)
-struct Light {
-  glm::vec3 position;
-  unsigned int        : 32;       // pad0
-  glm::vec3 color;
-  unsigned int        : 32;       // pad1
-};
-#pragma pack (pop)
+    struct Light {
+        glm::vec3 position;
+        glm::vec3 color;
+
+        GLfloat linear_factor;
+        GLfloat quadratic_factor;
+
+    };
 
 }

@@ -145,16 +145,18 @@ include_directories(${ASSIMP_INCLUDE})
 # ///////////////////////////////////////////////////
 
 # Creating our own library
-file(GLOB Application_lib_SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
-file(GLOB Application_lib_HEADERS ${PROJECT_SOURCE_DIR}/include/*.h)
+#file(GLOB Application_lib_SOURCES ${PROJECT_SOURCE_DIR}/src/)
+#file(GLOB Application_lib_HEADERS ${PROJECT_SOURCE_DIR}/include/*.h)
 ## We do not want main.cpp in the library
 #file(GLOB to_remove ${PROJECT_SOURCE_DIR}/src/main.cpp)
 #list(REMOVE_ITEM Application_lib_SOURCES ${to_remove})
 #list(REMOVE_ITEM Application_lib_HEADERS ${to_remove})
 #add_library(Application_lib ${Application_lib_SOURCES} ${Application_lib_HEADERS} )
 
+
 # Creating our executable
-add_executable(${PROJECT_NAME} ${Application_lib_SOURCES})
+add_executable(${PROJECT_NAME} src/main.cpp src/Engine.cpp src/DeferredRenderer.cpp src/FBO.cpp
+        src/ForwardRenderer.cpp src/GBuffer.cpp src/Mesh.cpp src/Model.cpp src/Quad.cpp src/Shader.cpp )
 
 
 if (APPLE)

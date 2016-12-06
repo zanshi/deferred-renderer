@@ -21,8 +21,10 @@ public:
         GBUFFER_NUM_TEXTURES
     };
 
-    explicit GBuffer(int width, int height);
+    GBuffer(int width, int height);
     ~GBuffer();
+
+    void setup();
 
     void bind_for_geometry_pass() const;
     void bind_for_lighting_pass() const;

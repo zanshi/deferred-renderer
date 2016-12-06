@@ -7,8 +7,15 @@
 
 namespace rengine {
 
-    GBuffer::GBuffer(int width, int height)
-            : width_{width}, height_{height} {
+    GBuffer::GBuffer(int width, int height) : width_{width}, height_{height}{
+
+    }
+
+    GBuffer::~GBuffer() {}
+
+
+    void GBuffer::setup() {
+
         glGenFramebuffers(1, &g_buffer_);
         glBindFramebuffer(GL_FRAMEBUFFER, g_buffer_);
 
@@ -47,10 +54,7 @@ namespace rengine {
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             std::cout << "Framebuffer not complete!" << std::endl;
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
     }
-
-    GBuffer::~GBuffer() {}
 
     void GBuffer::bind() const {
         glBindFramebuffer(GL_FRAMEBUFFER, g_buffer_);
