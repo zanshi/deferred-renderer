@@ -20,6 +20,7 @@
 #include "GBuffer.h"
 #include "FBO.h"
 #include "Quad.h"
+#include "Light.h"
 
 namespace rengine {
 
@@ -60,6 +61,7 @@ namespace rengine {
         GLFWwindow *window_;
 
         std::vector<Model> models_;
+        std::vector<Light> lights_;
 //        Quad quad_;
 
 //        const GLuint nr_lights_ = 64;
@@ -73,7 +75,7 @@ namespace rengine {
         GLfloat light_linear_factor_;
         GLfloat light_quadratic_factor_;
         static GLuint show_normals_;
-
+        static bool should_render_deferred_;
 
         Camera camera_;
         static double last_x;
@@ -81,13 +83,19 @@ namespace rengine {
         static bool keys_[1024];
         static bool first_mouse_movement_;
 
+
         bool compile_shaders();
 
-        inline void lighting_pass(const Camera &camera, const Shader &lighting_shader, const std::vector<glm::vec3> &lightPositions,
-                                   const std::vector<glm::vec3> &lightColors, const GBuffer &gbuffer, const FBO &render_fbo,
-                                   const Quad &quad) const;
+        void render_deferred(const Shader &geometry_shader, const Shader &lighting_shader, const GLuint ubo_transforms,
+                                     const FBO &render_fbo, const Quad &quad, const GBuffer &gbuffer) const;
+        void
+        render_forward(const Shader &forward_shader, const GLuint forward_ubo_transforms, const FBO &render_fbo) const;
 
-        void geometry_pass(const Shader &g_geometry_shader, const GBuffer &gbuffer, const GLuint ubo_transforms) const;
+        void deferred_lighting_pass(const Shader &lighting_shader, const GBuffer &gbuffer, const FBO &render_fbo,
+                                            const Quad &quad) const;
+
+        void deferred_geometry_pass(const Shader &g_geometry_shader, const GBuffer &gbuffer,
+                                    const GLuint ubo_transforms) const;
 
         void bloom_pass(const FBO &render_fbo, const std::array<FBO, 2> &filter_fbos, const Shader &shader_filter,
                                 const Shader &shader_combine, const Quad &quad) const;
@@ -100,7 +108,7 @@ namespace rengine {
 
         void update_window_title(const GLfloat time) const;
 
-        void setup_lights(std::vector<glm::vec3> &light_positions, std::vector<glm::vec3> &light_colors, GLfloat time);
+        void setup_lights();
 
 
     };
