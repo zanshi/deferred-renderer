@@ -143,6 +143,20 @@ set(ASSIMP_INCLUDE
 include_directories(${ASSIMP_INCLUDE})
 
 # ///////////////////////////////////////////////////
+# imgui
+
+file(GLOB IMGUI_SOURCES ${VENDOR_DIR}/imgui/src/*.cpp)
+set(IMGUI_INCLUDE_DIR ${VENDOR_DIR}/imgui/include)
+file(GLOB IMGUI_INCLUDE ${IMGUI_INCLUDE_DIR}/*.h)
+
+add_library(imgui ${IMGUI_SOURCES} ${IMGUI_INCLUDE})
+
+include_directories(${IMGUI_INCLUDE_DIR})
+
+# ///////////////////////////////////////////////////
+
+
+
 
 # Creating our own library
 file(GLOB Application_lib_SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
@@ -163,7 +177,7 @@ endif (APPLE)
 
 set(OTHER_LIBS ${minizip})
 
-target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES} ${OTHER_LIBS} GLEW glfw assimp)
+target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES} ${OTHER_LIBS} GLEW glfw assimp imgui)
 
 
 

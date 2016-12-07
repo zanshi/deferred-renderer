@@ -8,6 +8,8 @@
 #include <glm/gtx/rotate_vector.hpp>
 #include <random>
 #include <stdlib.h>
+#include <imgui.h>
+#include <imgui_impl_glfw_gl3.h>
 
 namespace rengine {
 
@@ -95,6 +97,9 @@ namespace rengine {
         }
 
         printf("GL version:      %s\n", glGetString(GL_VERSION));
+
+
+        ImGui_ImplGlfwGL3_Init(window_, true);
 
         glfwGetFramebufferSize(window_, &window_width_, &window_height_);
         glViewport(0, 0, window_width_, window_height_);
@@ -195,7 +200,7 @@ namespace rengine {
 //        GLuint lights_ubo = glGetUniformBlockIndex(deferred_lighting_shader.program_, "light_block");
 //        glUniformBlockBinding(deferred_lighting_shader.program_, lights_ubo, 1);
 
-        GLuint deferred_lights_idx= glGetUniformBlockIndex(deferred_lighting_shader.program_, "light_block");
+        GLuint deferred_lights_idx = glGetUniformBlockIndex(deferred_lighting_shader.program_, "light_block");
         glUniformBlockBinding(deferred_lighting_shader.program_, deferred_lights_idx, 1);
 
         GLuint forward_lights_idx = glGetUniformBlockIndex(forward_shader.program_, "light_block");
@@ -234,6 +239,8 @@ namespace rengine {
 //            glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
+
+
             // ------------------------------------------------------
             // Delta time calculations
             current_frame_time = static_cast<float>(glfwGetTime());
@@ -246,7 +253,43 @@ namespace rengine {
 
             // INPUT
             glfwPollEvents();
-            handle_input(delta_time);
+
+
+            ImGui_ImplGlfwGL3_NewFrame();
+
+            {
+                handle_input(delta_time);
+                
+                
+//
+//                if (keys_[GLFW_KEY_W])
+//                    camera_.ProcessKeyboard(FORWARD, delta_time);
+//                if (keys_[GLFW_KEY_S])
+//                    camera_.ProcessKeyboard(BACKWARD, delta_time);
+//                if (keys_[GLFW_KEY_A])
+//                    camera_.ProcessKeyboard(LEFT, delta_time);
+//                if (keys_[GLFW_KEY_D])
+//                    camera_.ProcessKeyboard(RIGHT, delta_time);
+//                if (keys_[GLFW_KEY_N]) {
+//                    show_normals_ = 1;
+//                }
+//                if (keys_[GLFW_KEY_M]) {
+//                    show_normals_ = 0;
+//                }
+//                if (keys_[GLFW_KEY_F]) {
+//                    should_render_deferred_ = false;
+//                }
+//                if (keys_[GLFW_KEY_G]) {
+//                    should_render_deferred_ = true;
+//                }
+                ImGui::Text("Hello, world!");
+                ImGui::SliderFloat("Linear light factor", &light_linear_factor_, 0.0f, 1.0f);
+//                ImGui::SliderFloat("Quadratic light factor", &light_quadratic_factor_, 0.0f, 1.0f);
+                ImGui::SliderFloat("Quadratic light factor", &light_quadratic_factor_, 0.0f, 1.0f);
+                if (ImGui::Button("Render deferred")) should_render_deferred_ ^= 1;
+            }
+
+
 
             // LIGHTS
             update_lights(forward_shader);
@@ -266,10 +309,13 @@ namespace rengine {
 
             bloom_pass(render_fbo, filter_fbos, filter_shader, combine_bloom_shader, quad);
 
+            ImGui::Render();
 
             // Swap the screen buffers
             glfwSwapBuffers(window_);
         }
+
+        ImGui_ImplGlfwGL3_Shutdown();
 
     }
 
@@ -344,8 +390,8 @@ namespace rengine {
         std::mt19937 gen(rd());
         std::uniform_real_distribution<> dis(0, 1);
 
-        light_linear_factor_ = 0.35;
-        light_quadratic_factor_ = 0.44;
+        light_linear_factor_ = 0.045f;
+        light_quadratic_factor_ = 0.0075f;
 
         for (GLuint i = 0; i < NR_LIGHTS; i++) {
 
@@ -519,53 +565,57 @@ namespace rengine {
 
     void Engine::handle_input(float delta_time) {
 
+        ImGuiIO& io = ImGui::GetIO();
+
+        if (io.KeysDown[GLFW_KEY_ESCAPE])
+            glfwSetWindowShouldClose(window_, GL_TRUE);
+
         // Camera controls
-        if (keys_[GLFW_KEY_W])
+        if (io.KeysDown[GLFW_KEY_W])
             camera_.ProcessKeyboard(FORWARD, delta_time);
-        if (keys_[GLFW_KEY_S])
+        if (io.KeysDown[GLFW_KEY_S])
             camera_.ProcessKeyboard(BACKWARD, delta_time);
-        if (keys_[GLFW_KEY_A])
+        if (io.KeysDown[GLFW_KEY_A])
             camera_.ProcessKeyboard(LEFT, delta_time);
-        if (keys_[GLFW_KEY_D])
+        if (io.KeysDown[GLFW_KEY_D])
             camera_.ProcessKeyboard(RIGHT, delta_time);
-        if (keys_[GLFW_KEY_1]) {
+
+        if (io.KeysDown[GLFW_KEY_N]) {
+            show_normals_ = 1;
+        }
+        if (io.KeysDown[GLFW_KEY_M]) {
+            show_normals_ = 0;
+        }
+        if (io.KeysDown[GLFW_KEY_F]) {
+            should_render_deferred_ = false;
+        }
+        if (io.KeysDown[GLFW_KEY_G]) {
+            should_render_deferred_ = true;
+        }
+
+        if (io.KeysDown[GLFW_KEY_1]) {
             light_linear_factor_ = 0.7f;
             light_quadratic_factor_ = 1.8f;
         }
-        if (keys_[GLFW_KEY_2]) {
+        if (io.KeysDown[GLFW_KEY_2]) {
             light_linear_factor_ = 0.35f;
             light_quadratic_factor_ = 0.44f;
         }
-        if (keys_[GLFW_KEY_3]) {
+        if (io.KeysDown[GLFW_KEY_3]) {
             light_linear_factor_ = 0.14f;
             light_quadratic_factor_ = 0.07f;
         }
-        if (keys_[GLFW_KEY_4]) {
+        if (io.KeysDown[GLFW_KEY_4]) {
             light_linear_factor_ = 0.045f;
             light_quadratic_factor_ = 0.0075f;
         }
-        if (keys_[GLFW_KEY_5]) {
+        if (io.KeysDown[GLFW_KEY_5]) {
             light_linear_factor_ = 0.022f;
             light_quadratic_factor_ = 0.0019f;
         }
-        if (keys_[GLFW_KEY_6]) {
+        if (io.KeysDown[GLFW_KEY_6]) {
             light_linear_factor_ = 0.012f;
             light_quadratic_factor_ = 0.0007f;
-        }
-        if (keys_[GLFW_KEY_SPACE]) {
-            show_normals_ = (show_normals_ == 1) ? 0 : 1;
-        }
-        if (keys_[GLFW_KEY_N]) {
-            show_normals_ = 1;
-        }
-        if (keys_[GLFW_KEY_M]) {
-            show_normals_ = 0;
-        }
-        if (keys_[GLFW_KEY_F]) {
-            should_render_deferred_ = false;
-        }
-        if (keys_[GLFW_KEY_G]) {
-            should_render_deferred_ = true;
         }
 
 
