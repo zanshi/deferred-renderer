@@ -170,11 +170,11 @@ namespace rengine {
 
 
 //        // Set up the transform block uniform block object
-//        deferred_geometry_shader.use();
-//
-//        // ------------------------------------------------------------------------------------
-//        // Set up the uniform transform block for each shader
-//        // should probably do this in the shader manager somehow
+        deferred_geometry_shader.use();
+
+        // ------------------------------------------------------------------------------------
+        // Set up the uniform transform block for each shader
+        // should probably do this in the shader manager somehow
 //        GLuint transform_ubo = glGetUniformBlockIndex(deferred_geometry_shader.program_, "TransformBlock");
 //        glUniformBlockBinding(deferred_geometry_shader.program_, transform_ubo, 0);
 //
@@ -194,7 +194,7 @@ namespace rengine {
 
 
 
-        // Set up the uniform transform block
+//        // Set up the uniform transform block
 //        forward_shader.use();
 //
 //        GLuint forward_transform_ubo = glGetUniformBlockIndex(forward_shader.program_, "TransformBlock");
@@ -235,12 +235,12 @@ namespace rengine {
 
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+//        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
         while (!glfwWindowShouldClose(window_)) {
 
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+//            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 
             // ------------------------------------------------------
             // Delta time calculations
@@ -262,11 +262,12 @@ namespace rengine {
             // ------------------------------------------------------
             // RENDERING
 
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             glViewport(0, 0, window_width_, window_height_);
 
             if (should_render_deferred_) {
 
-                // Set up the transform block uniform block object
+//                // Set up the transform block uniform block object
                 deferred_geometry_shader.use();
 
                 // ------------------------------------------------------------------------------------
@@ -303,10 +304,8 @@ namespace rengine {
 
                 glBindBufferRange(GL_UNIFORM_BUFFER, 0, forward_ubo_transforms, 0, 2 * sizeof(glm::mat4));
 
-
                 render_forward(forward_shader, forward_ubo_transforms, render_fbo);
             }
-
 
             bloom_pass(render_fbo, filter_fbos, filter_shader, combine_bloom_shader, quad);
 
@@ -332,7 +331,11 @@ namespace rengine {
     void Engine::render_forward(const Shader &forward_shader, const GLuint forward_ubo_transforms,
                                 const FBO &render_fbo) const {
 
+        // Bind the render FBO for drawing
         render_fbo.bind_draw();
+
+        // Clear the FBO so that we have a clean frame
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         forward_shader.use();
 
@@ -379,15 +382,17 @@ namespace rengine {
 //        glEnable(GL_CULL_FACE);
 //        glCullFace(GL_BACK);
 
-        // CAMERA
-        update_camera(forward_ubo_transforms);
 
-        // Draw the loaded model
         glm::mat4 model;
 //        model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
 //        model = glm::scale(model, glm::vec3(0.25f));    // It's a bit too big for our scene, so scale it down
-        glUniformMatrix4fv(glGetUniformLocation(forward_shader.program_, "model"), 1, GL_FALSE,
-                           glm::value_ptr(model));
+//        glUniformMatrix4fv(glGetUniformLocation(forward_shader.program_, "model"), 1, GL_FALSE,
+//                           glm::value_ptr(model));
+
+        // CAMERA
+        update_camera(forward_ubo_transforms, model);
+
+
 
         // Render the scene. (Also binds relevant textures)
         render_scene(forward_shader.program_);
@@ -397,8 +402,8 @@ namespace rengine {
         glDisable(GL_DEPTH_TEST);
 
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     }
 
@@ -458,15 +463,16 @@ namespace rengine {
 //        glEnable(GL_CULL_FACE);
 //        glCullFace(GL_BACK);
 
-        // CAMERA
-        update_camera(ubo_transforms);
 
         // Draw the loaded model
         glm::mat4 model;
 //        model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
 //        model = glm::scale(model, glm::vec3(0.25f));    // It's a bit too big for our scene, so scale it down
-        glUniformMatrix4fv(glGetUniformLocation(g_geometry_shader.program_, "model"), 1, GL_FALSE,
-                           glm::value_ptr(model));
+//        glUniformMatrix4fv(glGetUniformLocation(g_geometry_shader.program_, "model"), 1, GL_FALSE,
+//                           glm::value_ptr(model));
+
+        // CAMERA
+        update_camera(ubo_transforms, model);
 
         // Render the scene. (Also binds relevant textures)
         render_scene(g_geometry_shader.program_);
@@ -671,26 +677,62 @@ namespace rengine {
 
     }
 
-    void Engine::update_camera(GLuint ubo_transforms) const {
+    void Engine::update_camera(GLuint ubo_transforms, const glm::mat4 &model) const {
 
         // Set up the projection matrix and feed the data to the uniform block object
-        glm::mat4 projection = glm::perspective(camera_.Zoom, (GLfloat) window_width_ / (GLfloat) window_height_, 0.1f,
+        const glm::mat4 projection = glm::perspective(camera_.Zoom, (GLfloat) window_width_ / (GLfloat) window_height_, 0.1f,
                                                 1000.0f);
+        // To the same for the view matrix
+        const glm::mat4 view = camera_.GetViewMatrix();
+
+
         glBindBuffer(GL_UNIFORM_BUFFER, ubo_transforms);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection));
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection * view));
 //        glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-        // To the same for the view matrix
-        glm::mat4 view = camera_.GetViewMatrix();
+
 //        glBindBuffer(GL_UNIFORM_BUFFER, ubo_transforms);
+//        glBufferSubData(
+//                GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(view));
+
         glBufferSubData(
-                GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(view));
+                GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(model));
+
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     }
 
 
-    void Engine::update_lights(std::vector<glm::vec3> &light_positions, GLfloat time) {
+    void Engine::update_lights(GLfloat time, const Shader &shader) {
+
+        for (unsigned int i = 0; i < lights_.size(); i++) {
+            float i_f = ((float) i - 7.5f) * 0.1f + 0.3f;
+            // t = 0.0f;
+            const glm::vec3 pos = glm::vec3(
+                    100.0f * std::sin(time * 1.1f + (5.0f * i_f)) * std::cos(time * 2.3f + (9.0f * i_f)),
+                    15.0f,
+                    100.0f * std::sin(time * 1.5f + (6.0f * i_f)) * std::cos(time * 1.9f + (11.0f *
+                                                                                            i_f))); // 300.0f * std::sin(time * i_f * 0.7f) * std::cos(time * i_f * 0.9f) - 600.0f);
+            const glm::vec3 color = glm::vec3(std::cos(i_f * 14.0f) * 0.5f + 0.8f,
+                                              std::sin(i_f * 17.0f) * 0.5f + 0.8f,
+                                              std::sin(i_f * 13.0f) * std::cos(i_f * 19.0f) * 0.5f + 0.8f);
+
+            glUniform3fv(glGetUniformLocation(shader.program_,
+                                              ("lights[" + std::to_string(i) + "].Position").c_str()),
+                         1,
+                         glm::value_ptr(pos));
+            glUniform3fv(
+                    glGetUniformLocation(shader.program_, ("lights[" + std::to_string(i) + "].Color").c_str()),
+                    1,
+                    glm::value_ptr(color));
+
+            glUniform1f(glGetUniformLocation(shader.program_,
+                                             ("lights[" + std::to_string(i) + "].Linear").c_str()),
+                        light_linear_factor_);
+            glUniform1f(glGetUniformLocation(shader.program_,
+                                             ("lights[" + std::to_string(i) + "].Quadratic").c_str()),
+                        light_quadratic_factor_);
+        }
 
 
     }
