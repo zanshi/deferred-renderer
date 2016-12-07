@@ -31,7 +31,8 @@ namespace rengine {
 //                                                       aiProcess_CalcTangentSpace | aiProcess_GenNormals  );
 
 //        const aiScene *scene = aiImportFile(path.c_str(), aiProcessPreset_TargetRealtime_Fast);
-        const aiScene *scene = importer.ReadFile(path, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_FlipUVs);
+        const aiScene *scene = importer.ReadFile(path, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_FlipUVs |
+                                                       aiProcess_PreTransformVertices);
 //        const aiScene *scene = importer.ReadFile(path, aiProcess_FlipWindingOrder | aiProcess_CalcTangentSpace);
 
         // Check for errors
@@ -121,10 +122,10 @@ namespace rengine {
         return Mesh(vertices, indices, textures);
     }
 
-    std::string get_file_extension(const std::string& filename) {
+    std::string get_file_extension(const std::string &filename) {
 
-        if(filename.find_last_of(".") != std::string::npos) {
-            return filename.substr(filename.find_last_of(".")+1);
+        if (filename.find_last_of(".") != std::string::npos) {
+            return filename.substr(filename.find_last_of(".") + 1);
         } else {
             return "";
         }
@@ -149,7 +150,8 @@ namespace rengine {
             if (!skip) {   // If texture hasn't been loaded already, load it
                 Texture texture;
 //                texture.id = TextureFromFile(str.C_Str(), this->directory_);
-                texture.id = (get_file_extension(str.C_Str()) == "dds") ? create_texture(str.C_Str()) : TextureFromFile(str.C_Str(), this->directory_);
+                texture.id = (get_file_extension(str.C_Str()) == "dds") ? create_texture(str.C_Str()) : TextureFromFile(
+                        str.C_Str(), this->directory_);
                 texture.type = type_name;
                 texture.path = std::string(str.C_Str());
                 textures.push_back(texture);
@@ -162,7 +164,7 @@ namespace rengine {
 
 
     /// Filename can be KTX or DDS files
-    GLuint Model::create_texture(char const* Filename) {
+    GLuint Model::create_texture(char const *Filename) {
         std::string path = this->directory_ + std::string(Filename);
 
         std::cout << path << std::endl;
