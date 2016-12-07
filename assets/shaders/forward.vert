@@ -17,24 +17,26 @@ out VS_OUT
 
 layout(std140) uniform TransformBlock
 {
-    mat4 projection;
-    mat4 view;
+//    mat4 projection;
+//    mat4 view;
+    mat4 projView;
+    mat4 model;
 } transform;
 
-uniform mat4 model;
+//uniform mat4 model;
 
 void main()
 {
 
-    vec4 worldPos = model * vec4(position, 1.0f);
+    vec4 worldPos = transform.model * vec4(position, 1.0f);
 
     vs_out.FragPos = worldPos.xyz;
-    gl_Position = transform.projection * transform.view * worldPos;
+    gl_Position = transform.projView * worldPos;
     vs_out.TexCoords = texCoords;
 
 //    mat3 normalMatrix = transpose(inverse(mat3(model)));
 
-    mat3 mat3Model = mat3(model);
+    mat3 mat3Model = mat3(transform.model);
 
 //    vs_out.Normal = normalMatrix * normal;
 //    vs_out.Tangent = normalMatrix * tangent;

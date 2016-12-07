@@ -102,9 +102,9 @@ namespace rengine {
 
         void handle_input(float delta_time);
 
-        void update_camera(GLuint ubo_transforms) const;
+        void update_camera(GLuint ubo_transforms, const glm::mat4 &model) const;
 
-        void update_lights(std::vector<glm::vec3> &light_positions, GLfloat time);
+        void update_lights(GLfloat time, const Shader &shader);
 
         void update_window_title(const GLfloat time) const;
 
