@@ -9,15 +9,24 @@ uniform sampler2D gAlbedoSpec;
 
 struct Light {
     vec3 Position;
+    uint pad0;
     vec3 Color;
-
+    uint pad1;
     float Linear;
     float Quadratic;
-    float Radius;
+    uint pad2;
+    uint pad3;
 };
 
 const int NR_LIGHTS = 32;
-uniform Light lights[NR_LIGHTS];
+
+//uniform Light lights[NR_LIGHTS];
+
+layout (std140) uniform light_block {
+    Light lights[32];
+};
+
+
 uniform vec3 viewPos;
 
 uniform uint showNormals = 1;
@@ -71,7 +80,9 @@ void main()
 
     }
 
-    FragColor = vec4(lighting, 1.0);
+//    FragColor = vec4(lighting, 1.0);
+
+    FragColor = vec4(mix(lighting, Normal, showNormals),1.0);
 
     // ------------------------
     /// HDR
@@ -84,9 +95,9 @@ void main()
     lighting = lighting * 4.0 * smoothstep(bloom_thresh_min, bloom_thresh_max, Y);
     BrightColor = vec4(lighting, 1.0);
 
-    if(showNormals == 1) {
-        FragColor = vec4(Normal, 1.0);
-        BrightColor = vec4(0.0);
-    }
+//    if(showNormals == 1) {
+//        FragColor = vec4(Normal, 1.0);
+//        BrightColor = vec4(0.0);
+//    }
 
 }

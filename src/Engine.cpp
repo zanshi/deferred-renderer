@@ -33,6 +33,7 @@ namespace rengine {
     void Engine::start_up() {
 
         should_render_deferred_ = false;
+        show_normals_ = 0;
 
         if (!init_gl_context())
             exit(EXIT_FAILURE);
@@ -98,8 +99,6 @@ namespace rengine {
         glfwGetFramebufferSize(window_, &window_width_, &window_height_);
         glViewport(0, 0, window_width_, window_height_);
 
-
-        show_normals_ = 1;
 
         return true;
 
@@ -175,45 +174,38 @@ namespace rengine {
         // ------------------------------------------------------------------------------------
         // Set up the uniform transform block for each shader
         // should probably do this in the shader manager somehow
-//        GLuint transform_ubo = glGetUniformBlockIndex(deferred_geometry_shader.program_, "TransformBlock");
-//        glUniformBlockBinding(deferred_geometry_shader.program_, transform_ubo, 0);
-//
-//        GLuint ubo_transforms;
-//        glGenBuffers(1, &ubo_transforms);
-//
-//        glBindBuffer(GL_UNIFORM_BUFFER, ubo_transforms);
-//        glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
-//        glBindBuffer(GL_UNIFORM_BUFFER, 0);
-//
-//        glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo_transforms, 0, 2 * sizeof(glm::mat4));
+        GLuint transform_ubo = glGetUniformBlockIndex(deferred_geometry_shader.program_, "TransformBlock");
+        glUniformBlockBinding(deferred_geometry_shader.program_, transform_ubo, 0);
 
+        GLuint ubo_transforms;
+        glGenBuffers(1, &ubo_transforms);
 
+        glBindBuffer(GL_UNIFORM_BUFFER, ubo_transforms);
+        glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr, GL_STREAM_DRAW);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-        // ------------------------------------------------------------------------------------
-        // Set up forward stuff
-
-
-
-//        // Set up the uniform transform block
-//        forward_shader.use();
-//
-//        GLuint forward_transform_ubo = glGetUniformBlockIndex(forward_shader.program_, "TransformBlock");
-//        glUniformBlockBinding(forward_shader.program_, forward_transform_ubo, 0);
-//
-//        GLuint forward_ubo_transforms;
-//        glGenBuffers(1, &forward_ubo_transforms);
-//
-//        glBindBuffer(GL_UNIFORM_BUFFER, forward_ubo_transforms);
-//        glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
-//        glBindBuffer(GL_UNIFORM_BUFFER, 0);
-//
-//        glBindBufferRange(GL_UNIFORM_BUFFER, 0, forward_ubo_transforms, 0, 2 * sizeof(glm::mat4));
-
+        glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo_transforms, 0, 2 * sizeof(glm::mat4));
 
 
         // ------------------------------------------------------------------------------------
         // Set up lights
         setup_lights();
+
+
+//        GLuint lights_ubo = glGetUniformBlockIndex(deferred_lighting_shader.program_, "light_block");
+//        glUniformBlockBinding(deferred_lighting_shader.program_, lights_ubo, 1);
+
+        GLuint deferred_lights_idx= glGetUniformBlockIndex(deferred_lighting_shader.program_, "light_block");
+        glUniformBlockBinding(deferred_lighting_shader.program_, deferred_lights_idx, 1);
+
+        GLuint forward_lights_idx = glGetUniformBlockIndex(forward_shader.program_, "light_block");
+        glUniformBlockBinding(forward_shader.program_, forward_lights_idx, 1);
+
+        glGenBuffers(1, &lights_ubo_);
+
+        glBindBuffer(GL_UNIFORM_BUFFER, lights_ubo_);
+        glBufferData(GL_UNIFORM_BUFFER, nrOfLights_ * sizeof(Light), nullptr, GL_DYNAMIC_DRAW);
+
 
 
         // ------------------------------------------------------------------------------------
@@ -257,7 +249,7 @@ namespace rengine {
             handle_input(delta_time);
 
             // LIGHTS
-//            update_lights(light_positions, current_frame_time);
+            update_lights(forward_shader);
 
             // ------------------------------------------------------
             // RENDERING
@@ -266,45 +258,10 @@ namespace rengine {
             glViewport(0, 0, window_width_, window_height_);
 
             if (should_render_deferred_) {
-
-//                // Set up the transform block uniform block object
-                deferred_geometry_shader.use();
-
-                // ------------------------------------------------------------------------------------
-                // Set up the uniform transform block for each shader
-                // should probably do this in the shader manager somehow
-                GLuint transform_ubo = glGetUniformBlockIndex(deferred_geometry_shader.program_, "TransformBlock");
-                glUniformBlockBinding(deferred_geometry_shader.program_, transform_ubo, 0);
-
-                GLuint ubo_transforms;
-                glGenBuffers(1, &ubo_transforms);
-
-                glBindBuffer(GL_UNIFORM_BUFFER, ubo_transforms);
-                glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
-                glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-                glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo_transforms, 0, 2 * sizeof(glm::mat4));
-
-
                 render_deferred(deferred_geometry_shader, deferred_lighting_shader, ubo_transforms, render_fbo, quad,
                                 gbuffer);
             } else {
-
-                forward_shader.use();
-
-                GLuint forward_transform_ubo = glGetUniformBlockIndex(forward_shader.program_, "TransformBlock");
-                glUniformBlockBinding(forward_shader.program_, forward_transform_ubo, 0);
-
-                GLuint forward_ubo_transforms;
-                glGenBuffers(1, &forward_ubo_transforms);
-
-                glBindBuffer(GL_UNIFORM_BUFFER, forward_ubo_transforms);
-                glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
-                glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-                glBindBufferRange(GL_UNIFORM_BUFFER, 0, forward_ubo_transforms, 0, 2 * sizeof(glm::mat4));
-
-                render_forward(forward_shader, forward_ubo_transforms, render_fbo);
+                render_forward(forward_shader, ubo_transforms, render_fbo);
             }
 
             bloom_pass(render_fbo, filter_fbos, filter_shader, combine_bloom_shader, quad);
@@ -328,8 +285,9 @@ namespace rengine {
 
     }
 
-    void Engine::render_forward(const Shader &forward_shader, const GLuint forward_ubo_transforms,
-                                const FBO &render_fbo) const {
+    void
+    Engine::render_forward(const Shader &forward_shader, const GLuint forward_ubo_transforms,
+                           const FBO &render_fbo) const {
 
         // Bind the render FBO for drawing
         render_fbo.bind_draw();
@@ -344,36 +302,7 @@ namespace rengine {
         // Lights
         // -------------------------------------------------------------------------------------------
 
-        const float time = static_cast<float>(glfwGetTime() * 0.1);
-
-        for (unsigned int i = 0; i < lights_.size(); i++) {
-            float i_f = ((float) i - 7.5f) * 0.1f + 0.3f;
-            // t = 0.0f;
-            const glm::vec3 pos = glm::vec3(
-                    100.0f * std::sin(time * 1.1f + (5.0f * i_f)) * std::cos(time * 2.3f + (9.0f * i_f)),
-                    15.0f,
-                    100.0f * std::sin(time * 1.5f + (6.0f * i_f)) * std::cos(time * 1.9f + (11.0f *
-                                                                                            i_f))); // 300.0f * std::sin(time * i_f * 0.7f) * std::cos(time * i_f * 0.9f) - 600.0f);
-            const glm::vec3 color = glm::vec3(std::cos(i_f * 14.0f) * 0.5f + 0.8f,
-                                              std::sin(i_f * 17.0f) * 0.5f + 0.8f,
-                                              std::sin(i_f * 13.0f) * std::cos(i_f * 19.0f) * 0.5f + 0.8f);
-
-            glUniform3fv(glGetUniformLocation(forward_shader.program_,
-                                              ("lights[" + std::to_string(i) + "].Position").c_str()),
-                         1,
-                         glm::value_ptr(pos));
-            glUniform3fv(
-                    glGetUniformLocation(forward_shader.program_, ("lights[" + std::to_string(i) + "].Color").c_str()),
-                    1,
-                    glm::value_ptr(color));
-
-            glUniform1f(glGetUniformLocation(forward_shader.program_,
-                                             ("lights[" + std::to_string(i) + "].Linear").c_str()),
-                        light_linear_factor_);
-            glUniform1f(glGetUniformLocation(forward_shader.program_,
-                                             ("lights[" + std::to_string(i) + "].Quadratic").c_str()),
-                        light_quadratic_factor_);
-        }
+//        update_lights(forward_shader);
 
         glUniform3fv(glGetUniformLocation(forward_shader.program_, "viewPos"), 1, glm::value_ptr(camera_.Position));
 
@@ -501,43 +430,8 @@ namespace rengine {
 
         // Lights
         // -------------------------------------------------------------------------------------------
+//        update_lights(lighting_shader);
 
-        const float time = static_cast<float>(glfwGetTime() * 0.1);
-        // TODO do it more like in the OpenGL superbible, seems way more efficient
-        for (unsigned int i = 0; i < lights_.size(); i++) {
-
-            float i_f = ((float) i - 7.5f) * 0.1f + 0.3f;
-            // t = 0.0f;
-            const glm::vec3 pos = glm::vec3(
-                    100.0f * std::sin(time * 1.1f + (5.0f * i_f)) * std::cos(time * 2.3f + (9.0f * i_f)),
-                    15.0f,
-                    100.0f * std::sin(time * 1.5f + (6.0f * i_f)) * std::cos(time * 1.9f + (11.0f *
-                                                                                            i_f))); // 300.0f * std::sin(time * i_f * 0.7f) * std::cos(time * i_f * 0.9f) - 600.0f);
-            const glm::vec3 color = glm::vec3(std::cos(i_f * 14.0f) * 0.5f + 0.8f,
-                                              std::sin(i_f * 17.0f) * 0.5f + 0.8f,
-                                              std::sin(i_f * 13.0f) * std::cos(i_f * 19.0f) * 0.5f + 0.8f);
-
-//            const glm::vec3 pos = glm::rotateY(lightPositions[i], temp_time + phase * i);
-//            const glm::vec3 pos = lightPositions[i];
-
-
-//            const glm::vec3 pos(lightPositions[i].x, lightPositions[i].y, lightPositions[i].z * rot * (i+1));
-            glUniform3fv(glGetUniformLocation(lighting_shader.program_,
-                                              ("lights[" + std::to_string(i) + "].Position").c_str()),
-                         1,
-                         glm::value_ptr(pos));
-            glUniform3fv(
-                    glGetUniformLocation(lighting_shader.program_, ("lights[" + std::to_string(i) + "].Color").c_str()),
-                    1,
-                    glm::value_ptr(color));
-
-            glUniform1f(glGetUniformLocation(lighting_shader.program_,
-                                             ("lights[" + std::to_string(i) + "].Linear").c_str()),
-                        light_linear_factor_);
-            glUniform1f(glGetUniformLocation(lighting_shader.program_,
-                                             ("lights[" + std::to_string(i) + "].Quadratic").c_str()),
-                        light_quadratic_factor_);
-        }
 
         glUniform3fv(glGetUniformLocation(lighting_shader.program_, "viewPos"), 1, glm::value_ptr(camera_.Position));
 
@@ -680,8 +574,9 @@ namespace rengine {
     void Engine::update_camera(GLuint ubo_transforms, const glm::mat4 &model) const {
 
         // Set up the projection matrix and feed the data to the uniform block object
-        const glm::mat4 projection = glm::perspective(camera_.Zoom, (GLfloat) window_width_ / (GLfloat) window_height_, 0.1f,
-                                                1000.0f);
+        const glm::mat4 projection = glm::perspective(camera_.Zoom, (GLfloat) window_width_ / (GLfloat) window_height_,
+                                                      0.1f,
+                                                      1000.0f);
         // To the same for the view matrix
         const glm::mat4 view = camera_.GetViewMatrix();
 
@@ -703,36 +598,35 @@ namespace rengine {
     }
 
 
-    void Engine::update_lights(GLfloat time, const Shader &shader) {
+    void Engine::update_lights(const Shader &shader) const {
 
-        for (unsigned int i = 0; i < lights_.size(); i++) {
+        shader.use();
+
+        glBindBufferBase(GL_UNIFORM_BUFFER, 1, lights_ubo_);
+
+        Light *lights = reinterpret_cast<Light *>(glMapBufferRange(GL_UNIFORM_BUFFER,
+                                                                   0,
+                                                                   nrOfLights_ * sizeof(Light),
+                                                                   GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT));
+
+        const GLfloat time = static_cast<GLfloat>(glfwGetTime());
+
+        for (unsigned int i = 0; i < nrOfLights_; i++) {
             float i_f = ((float) i - 7.5f) * 0.1f + 0.3f;
             // t = 0.0f;
-            const glm::vec3 pos = glm::vec3(
+            lights[i].position = glm::vec3(
                     100.0f * std::sin(time * 1.1f + (5.0f * i_f)) * std::cos(time * 2.3f + (9.0f * i_f)),
                     15.0f,
                     100.0f * std::sin(time * 1.5f + (6.0f * i_f)) * std::cos(time * 1.9f + (11.0f *
                                                                                             i_f))); // 300.0f * std::sin(time * i_f * 0.7f) * std::cos(time * i_f * 0.9f) - 600.0f);
-            const glm::vec3 color = glm::vec3(std::cos(i_f * 14.0f) * 0.5f + 0.8f,
-                                              std::sin(i_f * 17.0f) * 0.5f + 0.8f,
-                                              std::sin(i_f * 13.0f) * std::cos(i_f * 19.0f) * 0.5f + 0.8f);
-
-            glUniform3fv(glGetUniformLocation(shader.program_,
-                                              ("lights[" + std::to_string(i) + "].Position").c_str()),
-                         1,
-                         glm::value_ptr(pos));
-            glUniform3fv(
-                    glGetUniformLocation(shader.program_, ("lights[" + std::to_string(i) + "].Color").c_str()),
-                    1,
-                    glm::value_ptr(color));
-
-            glUniform1f(glGetUniformLocation(shader.program_,
-                                             ("lights[" + std::to_string(i) + "].Linear").c_str()),
-                        light_linear_factor_);
-            glUniform1f(glGetUniformLocation(shader.program_,
-                                             ("lights[" + std::to_string(i) + "].Quadratic").c_str()),
-                        light_quadratic_factor_);
+            lights[i].color = glm::vec3(std::cos(i_f * 14.0f) * 0.5f + 0.8f,
+                                        std::sin(i_f * 17.0f) * 0.5f + 0.8f,
+                                        std::sin(i_f * 13.0f) * std::cos(i_f * 19.0f) * 0.5f + 0.8f);
+            lights[i].linear = light_linear_factor_;
+            lights[i].quadratic = light_quadratic_factor_;
         }
+
+        glUnmapBuffer(GL_UNIFORM_BUFFER);
 
 
     }

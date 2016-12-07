@@ -72,8 +72,13 @@ namespace rengine {
         static bool instantiated_;
 
         bool setup_camera();
+
         GLfloat light_linear_factor_;
         GLfloat light_quadratic_factor_;
+        GLuint lights_ubo_;
+
+        const unsigned int nrOfLights_ = 32;
+
         static GLuint show_normals_;
         static bool should_render_deferred_;
 
@@ -87,24 +92,25 @@ namespace rengine {
         bool compile_shaders();
 
         void render_deferred(const Shader &geometry_shader, const Shader &lighting_shader, const GLuint ubo_transforms,
-                                     const FBO &render_fbo, const Quad &quad, const GBuffer &gbuffer) const;
+                             const FBO &render_fbo, const Quad &quad, const GBuffer &gbuffer) const;
+
         void
         render_forward(const Shader &forward_shader, const GLuint forward_ubo_transforms, const FBO &render_fbo) const;
 
         void deferred_lighting_pass(const Shader &lighting_shader, const GBuffer &gbuffer, const FBO &render_fbo,
-                                            const Quad &quad) const;
+                                    const Quad &quad) const;
 
         void deferred_geometry_pass(const Shader &g_geometry_shader, const GBuffer &gbuffer,
                                     const GLuint ubo_transforms) const;
 
         void bloom_pass(const FBO &render_fbo, const std::array<FBO, 2> &filter_fbos, const Shader &shader_filter,
-                                const Shader &shader_combine, const Quad &quad) const;
+                        const Shader &shader_combine, const Quad &quad) const;
 
         void handle_input(float delta_time);
 
         void update_camera(GLuint ubo_transforms, const glm::mat4 &model) const;
 
-        void update_lights(GLfloat time, const Shader &shader);
+        void update_lights(const Shader &shader) const;
 
         void update_window_title(const GLfloat time) const;
 
