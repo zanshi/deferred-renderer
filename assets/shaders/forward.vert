@@ -42,7 +42,7 @@ void main()
 //    vs_out.Tangent = normalMatrix * tangent;
 //    vs_out.BiTangent = normalMatrix * bitangent;
     vs_out.Normal = mat3Model * normal;
-    vs_out.Tangent = mat3Model * tangent;
-    vs_out.BiTangent = mat3Model * bitangent;
+    vs_out.Tangent = tangent;
+    vs_out.BiTangent = bitangent;
 
 }

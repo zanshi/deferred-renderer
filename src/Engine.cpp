@@ -7,7 +7,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <random>
-#include <stdlib.h>
 #include <imgui.h>
 #include <imgui_impl_glfw_gl3.h>
 
@@ -236,11 +235,6 @@ namespace rengine {
 
         while (!glfwWindowShouldClose(window_)) {
 
-//            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
-
-
             // ------------------------------------------------------
             // Delta time calculations
             current_frame_time = static_cast<float>(glfwGetTime());
@@ -259,36 +253,13 @@ namespace rengine {
 
             {
                 handle_input(delta_time);
-                
-                
-//
-//                if (keys_[GLFW_KEY_W])
-//                    camera_.ProcessKeyboard(FORWARD, delta_time);
-//                if (keys_[GLFW_KEY_S])
-//                    camera_.ProcessKeyboard(BACKWARD, delta_time);
-//                if (keys_[GLFW_KEY_A])
-//                    camera_.ProcessKeyboard(LEFT, delta_time);
-//                if (keys_[GLFW_KEY_D])
-//                    camera_.ProcessKeyboard(RIGHT, delta_time);
-//                if (keys_[GLFW_KEY_N]) {
-//                    show_normals_ = 1;
-//                }
-//                if (keys_[GLFW_KEY_M]) {
-//                    show_normals_ = 0;
-//                }
-//                if (keys_[GLFW_KEY_F]) {
-//                    should_render_deferred_ = false;
-//                }
-//                if (keys_[GLFW_KEY_G]) {
-//                    should_render_deferred_ = true;
-//                }
+
                 ImGui::Text("Hello, world!");
-                ImGui::SliderFloat("Linear light factor", &light_linear_factor_, 0.0f, 1.0f);
+                ImGui::SliderFloat("Linear light factor", &light_linear_factor_, 0.0f, 0.4f);
 //                ImGui::SliderFloat("Quadratic light factor", &light_quadratic_factor_, 0.0f, 1.0f);
-                ImGui::SliderFloat("Quadratic light factor", &light_quadratic_factor_, 0.0f, 1.0f);
+                ImGui::SliderFloat("Quadratic light factor", &light_quadratic_factor_, 0.0f, 0.4f);
                 if (ImGui::Button("Render deferred")) should_render_deferred_ ^= 1;
             }
-
 
 
             // LIGHTS
@@ -659,10 +630,10 @@ namespace rengine {
                                                                    nrOfLights_ * sizeof(Light),
                                                                    GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT));
 
-        const GLfloat time = static_cast<GLfloat>(glfwGetTime());
+        const GLfloat time = static_cast<GLfloat>(glfwGetTime()) * 0.05f;
 
         for (unsigned int i = 0; i < nrOfLights_; i++) {
-            float i_f = ((float) i - 7.5f) * 0.1f + 0.3f;
+            const float i_f = ((float) i - 7.5f) * 0.1f + 0.3f;
             // t = 0.0f;
             lights[i].position = glm::vec3(
                     100.0f * std::sin(time * 1.1f + (5.0f * i_f)) * std::cos(time * 2.3f + (9.0f * i_f)),

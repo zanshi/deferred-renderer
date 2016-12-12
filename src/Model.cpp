@@ -4,11 +4,9 @@
 
 
 #include "Model.h"
-#include <algorithm>
 #include <assimp/postprocess.h>
 #include <assimp/Importer.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "Texture.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 
@@ -287,6 +285,8 @@ namespace rengine {
                             break;
                     }
                 }
+
+        glBindTexture(GL_TEXTURE_2D, 0);
 
         return TextureName;
     }
