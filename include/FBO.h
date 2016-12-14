@@ -19,9 +19,7 @@ namespace rengine {
 
         ~FBO();
 
-        void bind_read() const;
-
-        void bind_draw() const;
+        void bind() const;
 
         std::vector<GLuint> textures_;
         GLuint tex_depth_;
