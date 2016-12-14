@@ -30,7 +30,6 @@ public:
     void bind() const;
 
     GLuint tex_[3];
-    GLuint position_, normal_, albedo_spec_, depth_;
 
 private:
     GLuint g_buffer_;

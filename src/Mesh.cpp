@@ -52,7 +52,7 @@ namespace rengine {
     }
 
 // TODO improve performance
-    void Mesh::draw(GLuint current_program) const {
+    void Mesh::draw() const {
         GLuint diffuseNr = 1;
         GLuint specularNr = 1;
         GLuint normalNr = 1;
@@ -70,9 +70,10 @@ namespace rengine {
                 ss << normalNr++;
             number = ss.str();
 
-//            std::cout << (name + number).c_str() << std::endl;
+//            std::cout << (name + number).c_str() << ", i = " << i << std::endl;
 
-            glUniform1i(glGetUniformLocation(current_program, (name + number).c_str()), i);
+//            glUniform1i(glGetUniformLocation(current_program, (name + number).c_str()), i);
+//            glUniform1i(i, (GLuint) (name + number).c_str());
             glBindTexture(GL_TEXTURE_2D, textures_[i].id);
         }
 

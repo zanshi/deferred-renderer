@@ -56,7 +56,7 @@ namespace rengine {
 
         bool load_scene();
 
-        void render_scene(GLuint shader_program) const;
+        void render_scene() const;
 
         GLFWwindow *window_;
 
@@ -77,7 +77,7 @@ namespace rengine {
         GLfloat light_quadratic_factor_;
         GLuint lights_ubo_;
 
-        const unsigned int nrOfLights_ = 64;
+        const unsigned int nrOfLights_ = 32;
 
         static GLuint show_normals_;
         static bool should_render_deferred_;

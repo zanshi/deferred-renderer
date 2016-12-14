@@ -16,7 +16,7 @@ namespace rengine {
 
     public:
         Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vector<Texture> textures);
-        void draw(GLuint current_program) const;
+        void draw() const;
 
     private:
         /*  Render data  */

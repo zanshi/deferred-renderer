@@ -1,7 +1,6 @@
-#version 410 core
-layout (location = 0) out vec3 gPosition;
-layout (location = 1) out vec3 gNormal;
-layout (location = 2) out vec4 gAlbedoSpec;
+#version 430 core
+layout (location = 0) out uvec4 color0;
+layout (location = 1) out vec4 color1;
 
 in VS_OUT
 {
@@ -12,9 +11,9 @@ in VS_OUT
     vec3 BiTangent;
 } fs_in;
 
-uniform sampler2D texture_diffuse1;
-uniform sampler2D texture_specular1;
-uniform sampler2D texture_normal1;
+layout(binding = 0) uniform sampler2D texture_diffuse1;
+layout(binding = 1) uniform sampler2D texture_specular1;
+layout(binding = 2) uniform sampler2D texture_normal1;
 
 void main()
 {
@@ -28,12 +27,23 @@ void main()
     vec3 nm = texture(texture_normal1, fs_in.TexCoords).xyz * 2.0 - vec3(1.0);
     nm = TBN * normalize(nm);
 
-    // Store the fragment position vector in the first gbuffer texture
-    gPosition = fs_in.FragPos;
-    // Also store the per-fragment normals into the gbuffer
-    gNormal = nm;
-    // And the diffuse per-fragment color
-    gAlbedoSpec.rgb = texture(texture_diffuse1, fs_in.TexCoords).rgb;
-    // Store specular intensity in gAlbedoSpec's alpha component
-    gAlbedoSpec.a = texture(texture_specular1, fs_in.TexCoords).r;
+    uvec4 outvec0 = uvec4(0);
+    vec4 outvec1 = vec4(0);
+
+    vec3 color = texture(texture_diffuse1, fs_in.TexCoords).rgb;
+
+    // Pack the color and normal information into the RGB32UI framebuffer texture
+    outvec0.x = packHalf2x16(color.xy);
+    outvec0.y = packHalf2x16(vec2(color.z, nm.x));
+    outvec0.z = packHalf2x16(nm.yz);
+
+    // Pack the world space coordinates and the specular color info into
+    // the RGB32F framebuffer texture
+    outvec1.xyz = fs_in.FragPos;
+    outvec1.w = texture(texture_specular1, fs_in.TexCoords).r;
+
+
+    color0 = outvec0;
+    color1 = outvec1;
+
 }
