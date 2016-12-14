@@ -53,27 +53,27 @@ namespace rengine {
 
 // TODO improve performance
     void Mesh::draw() const {
-        GLuint diffuseNr = 1;
-        GLuint specularNr = 1;
-        GLuint normalNr = 1;
+//        GLuint diffuseNr = 1;
+//        GLuint specularNr = 1;
+//        GLuint normalNr = 1;
         for (GLuint i = 0; i < textures_.size(); i++) {
             glActiveTexture(GL_TEXTURE0 + i); // Activate proper texture unit before binding
-            // Retrieve texture number (the N in diffuse_textureN)
-            std::stringstream ss;
-            std::string number;
-            std::string name = textures_[i].type;
-            if (name == "texture_diffuse")
-                ss << diffuseNr++; // Transfer GLuint to stream
-            else if (name == "texture_specular")
-                ss << specularNr++; // Transfer GLuint to stream
-            else if (name == "texture_normal")
-                ss << normalNr++;
-            number = ss.str();
-
-//            std::cout << (name + number).c_str() << ", i = " << i << std::endl;
-
-//            glUniform1i(glGetUniformLocation(current_program, (name + number).c_str()), i);
-//            glUniform1i(i, (GLuint) (name + number).c_str());
+//            // Retrieve texture number (the N in diffuse_textureN)
+//            std::stringstream ss;
+//            std::string number;
+//            std::string name = textures_[i].type;
+//            if (name == "texture_diffuse")
+//                ss << diffuseNr++; // Transfer GLuint to stream
+//            else if (name == "texture_specular")
+//                ss << specularNr++; // Transfer GLuint to stream
+//            else if (name == "texture_normal")
+//                ss << normalNr++;
+//            number = ss.str();
+//
+////            std::cout << (name + number).c_str() << ", i = " << i << std::endl;
+//
+////            glUniform1i(glGetUniformLocation(current_program, (name + number).c_str()), i);
+////            glUniform1i(i, (GLuint) (name + number).c_str());
             glBindTexture(GL_TEXTURE_2D, textures_[i].id);
         }
 

@@ -50,6 +50,12 @@ namespace rengine {
 
     private:
 
+        static bool instantiated_;
+        static double last_x;
+        static double last_y;
+        static bool keys_[1024];
+        static bool first_mouse_movement_;
+
         bool init_gl_context();
 
         bool enable_gl_features();
@@ -60,51 +66,57 @@ namespace rengine {
 
         GLFWwindow *window_;
 
-        std::vector<Model> models_;
-        std::vector<Light> lights_;
-//        Quad quad_;
-
-//        const GLuint nr_lights_ = 64;
-
         int window_width_;
         int window_height_;
 
-        static bool instantiated_;
+        std::vector<Model> models_;
+
+        Camera camera_;
 
         bool setup_camera();
 
+        // Lights
+        std::vector<Light> lights_;
+        Light * lights_gl_;
         GLfloat light_linear_factor_;
         GLfloat light_quadratic_factor_;
         GLuint lights_ubo_;
-
         const unsigned int nrOfLights_ = 32;
+
 
         static GLuint show_normals_;
         static bool should_render_deferred_;
 
-        Camera camera_;
-        static double last_x;
-        static double last_y;
-        static bool keys_[1024];
-        static bool first_mouse_movement_;
-
 
         bool compile_shaders();
 
-        void render_deferred(const Shader &geometry_shader, const Shader &lighting_shader, const GLuint ubo_transforms,
-                             const FBO &render_fbo, const Quad &quad, const GBuffer &gbuffer) const;
+        void render_forward(const Shader &forward_shader,
+                            const GLuint forward_ubo_transforms,
+                            const FBO &render_fbo) const;
 
-        void
-        render_forward(const Shader &forward_shader, const GLuint forward_ubo_transforms, const FBO &render_fbo) const;
 
-        void deferred_lighting_pass(const Shader &lighting_shader, const GBuffer &gbuffer, const FBO &render_fbo,
+        void render_deferred(const Shader &geometry_shader,
+                             const Shader &lighting_shader,
+                             const GLuint ubo_transforms,
+                             const FBO &render_fbo,
+                             const Quad &quad,
+                             const GBuffer &gbuffer) const;
+
+        void deferred_lighting_pass(const Shader &lighting_shader,
+                                    const GBuffer &gbuffer,
+                                    const FBO &render_fbo,
                                     const Quad &quad) const;
 
-        void deferred_geometry_pass(const Shader &g_geometry_shader, const GBuffer &gbuffer,
+        void deferred_geometry_pass(const Shader &g_geometry_shader,
+                                    const GBuffer &gbuffer,
                                     const GLuint ubo_transforms) const;
 
-        void bloom_pass(const FBO &render_fbo, const std::array<FBO, 2> &filter_fbos, const Shader &shader_filter,
-                                const Shader &shader_combine, const Shader &shader_plain, const Quad &quad) const;
+        void bloom_pass(const FBO &render_fbo,
+                        const std::array<FBO, 2> &filter_fbos,
+                        const Shader &shader_filter,
+                        const Shader &shader_combine,
+                        const Shader &shader_plain,
+                        const Quad &quad) const;
 
         void handle_input(float delta_time);
 

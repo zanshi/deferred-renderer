@@ -176,7 +176,7 @@ namespace rengine {
 
         // ------------------------------------------------------------------------------------
         // Set up lights
-        setup_lights();
+
 
         GLuint deferred_lights_idx = glGetUniformBlockIndex(deferred_lighting_shader.program_, "light_block");
         glUniformBlockBinding(deferred_lighting_shader.program_, deferred_lights_idx, 1);
@@ -187,7 +187,22 @@ namespace rengine {
         glGenBuffers(1, &lights_ubo_);
 
         glBindBuffer(GL_UNIFORM_BUFFER, lights_ubo_);
-        glBufferData(GL_UNIFORM_BUFFER, nrOfLights_ * sizeof(Light), nullptr, GL_DYNAMIC_DRAW);
+//        glBufferStorage(GL_UNIFORM_BUFFER,
+//                        nrOfLights_ * sizeof(Light), nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT);
+
+
+        glBufferData(GL_UNIFORM_BUFFER, nrOfLights_ * sizeof(Light), nullptr, GL_STREAM_DRAW);
+
+//        lights_gl_ = reinterpret_cast<Light *> (glMapBufferRange(
+//                GL_UNIFORM_BUFFER,
+//                0,
+//                nrOfLights_ * sizeof(Light),
+//                GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT ));
+
+//
+        setup_lights();
+//
+////
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 
@@ -276,7 +291,6 @@ namespace rengine {
 
         // Geometry pass
         deferred_geometry_pass(geometry_shader, gbuffer, ubo_transforms);
-
         // Lighting pass
         deferred_lighting_pass(lighting_shader, gbuffer, render_fbo, quad);
 
@@ -287,10 +301,9 @@ namespace rengine {
                            const FBO &render_fbo) const {
 
         // Bind the render FBO for drawing
-        render_fbo.bind_draw();
+        render_fbo.bind();
 
         // Clear the FBO so that we have a clean frame
-//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         static const GLfloat black[] = {0.0f, 0.0f, 0.0f, 1.0f};
         static const GLfloat float_ones = 1.0f;
         glClearBufferfv(GL_COLOR, 0, black);
@@ -303,9 +316,6 @@ namespace rengine {
 
         // Lights
         // -------------------------------------------------------------------------------------------
-
-//        update_lights(forward_shader);
-
         glUniform3fv(glGetUniformLocation(forward_shader.program_, "viewPos"), 1, glm::value_ptr(camera_.Position));
 
         glEnable(GL_DEPTH_TEST);
@@ -313,17 +323,10 @@ namespace rengine {
 //        glEnable(GL_CULL_FACE);
 //        glCullFace(GL_BACK);
 
-
         glm::mat4 model;
-//        model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
-//        model = glm::scale(model, glm::vec3(0.25f));    // It's a bit too big for our scene, so scale it down
-//        glUniformMatrix4fv(glGetUniformLocation(forward_shader.program_, "model"), 1, GL_FALSE,
-//                           glm::value_ptr(model));
 
         // CAMERA
         update_camera(forward_ubo_transforms, model);
-
-
 
         // Render the scene. (Also binds relevant textures)
         render_scene();
@@ -333,51 +336,62 @@ namespace rengine {
         glDisable(GL_DEPTH_TEST);
 
 
-//        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     }
 
 
     void Engine::setup_lights() {
-        const GLuint NR_LIGHTS = 32;
-
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_real_distribution<> dis(0, 1);
 
         light_linear_factor_ = 0.045f;
         light_quadratic_factor_ = 0.0075f;
 
-        for (GLuint i = 0; i < NR_LIGHTS; i++) {
+//        const GLfloat time = static_cast<GLfloat>(glfwGetTime()) * 0.05f;
+//
+//        for (unsigned int i = 0; i < nrOfLights_; i++) {
+//            const float i_f = ((float) i - 7.5f) * 0.1f + 0.3f;
+//            // t = 0.0f;
+//            lights_gl_[i].position = glm::vec3(
+//                    100.0f * std::sin(time * 1.1f + (5.0f * i_f)) * std::cos(time * 2.3f + (9.0f * i_f)),
+//                    15.0f,
+//                    100.0f * std::sin(time * 1.5f + (6.0f * i_f)) * std::cos(time * 1.9f + (11.0f *
+//                                                                                            i_f)));
+//            lights_gl_[i].color = glm::vec3(std::cos(i_f * 14.0f) * 0.5f + 0.8f,
+//                                        std::sin(i_f * 17.0f) * 0.5f + 0.8f,
+//                                        std::sin(i_f * 13.0f) * std::cos(i_f * 19.0f) * 0.5f + 0.8f);
+//            lights_gl_[i].linear = light_linear_factor_;
+//            lights_gl_[i].quadratic = light_quadratic_factor_;
+//        }
 
-            // Calculate slightly random offsets
-//            GLfloat xPos = static_cast<GLfloat>(dis(gen) * 6.0f - 3.0f);
-//            GLfloat yPos = static_cast<GLfloat>(dis(gen) * 6.0f - 3.0f + 4.0f);
-//            GLfloat zPos = static_cast<GLfloat>(dis(gen) * 6.0f - 3.0f);
-//            GLfloat xPos = 0.1f * i * 6.0f - 3.0f;
-            GLfloat xPos = 0.0;
-            GLfloat yPos = 0.1f * i * 6.0f - 3.0f;
-            GLfloat zPos = 0.1f * i * 6.0f - 3.0f;
-            glm::vec3 pos = {xPos, yPos, zPos};
 
-            pos *= 10.0f;
-
-            // Also calculate random color
-            GLfloat rColor = static_cast<GLfloat>(dis(gen) / 2.0f + 0.5f); // Between 0.5 and 1.0
-            GLfloat gColor = static_cast<GLfloat>(dis(gen) / 2.0f + 0.5f); // Between 0.5 and 1.0
-            GLfloat bColor = static_cast<GLfloat>(dis(gen) / 2.0f + 0.5f); // Between 0.5 and 1.0
-//            GLfloat rColor = 1.0f - 0.01f * i; // Between 0.5 and 1.0
-//            GLfloat gColor = 1.0f - 0.02f * i; // Between 0.5 and 1.0
-//            GLfloat bColor = 1.0f - 0.03f * i; // Between 0.5 and 1.0
-//            std::cout << rColor << std::endl;
-
-            Light light;
-            light.position = pos;
-            light.color = glm::vec3(rColor, gColor, bColor);
-
-            lights_.push_back(light);
-        }
+//        const GLuint NR_LIGHTS = 32;
+//
+//        std::random_device rd;
+//        std::mt19937 gen(rd());
+//        std::uniform_real_distribution<> dis(0, 1);
+//
+//        light_linear_factor_ = 0.045f;
+//        light_quadratic_factor_ = 0.0075f;
+//
+//        for (GLuint i = 0; i < NR_LIGHTS; i++) {
+//
+//            // Calculate slightly random offsets
+//            GLfloat xPos = 0.0;
+//            GLfloat yPos = 0.1f * i * 6.0f - 3.0f;
+//            GLfloat zPos = 0.1f * i * 6.0f - 3.0f;
+//            glm::vec3 pos = {xPos, yPos, zPos};
+//
+//            pos *= 10.0f;
+//
+//            // Also calculate random color
+//            GLfloat rColor = static_cast<GLfloat>(dis(gen) / 2.0f + 0.5f); // Between 0.5 and 1.0
+//            GLfloat gColor = static_cast<GLfloat>(dis(gen) / 2.0f + 0.5f); // Between 0.5 and 1.0
+//            GLfloat bColor = static_cast<GLfloat>(dis(gen) / 2.0f + 0.5f); // Between 0.5 and 1.0
+//
+//            Light light;
+//            light.position = pos;
+//            light.color = glm::vec3(rColor, gColor, bColor);
+//
+//            lights_.push_back(light);
+//        }
     }
 
 
@@ -424,10 +438,8 @@ namespace rengine {
     void Engine::deferred_lighting_pass(const Shader &lighting_shader, const GBuffer &gbuffer, const FBO &render_fbo,
                                         const Quad &quad) const {
 
-//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//        glDrawBuffer(GL_BACK);
 
-        render_fbo.bind_draw();
+        render_fbo.bind();
 
         static const GLfloat black[] = {0.0f, 0.0f, 0.0f, 1.0f};
         static const GLfloat float_ones = 1.0f;
@@ -446,7 +458,6 @@ namespace rengine {
 
         // Lights
         // -------------------------------------------------------------------------------------------
-//        update_lights(lighting_shader);
 
 
         glUniform3fv(glGetUniformLocation(lighting_shader.program_, "viewPos"), 1, glm::value_ptr(camera_.Position));
@@ -466,95 +477,19 @@ namespace rengine {
 
         //-----------------------------------------------
         // Filter
-
-//        shader_plain.use();
-//
-//        glUniform1i(glGetUniformLocation(shader_plain.program_, "brightImage"), 0);
-//
-//        glBindVertexArray(quad.vao_); // Bind the quad's VAO
-//
-//        filter_fbos[0].bind_draw(); // Use the first filter FBO
-//
-//        glActiveTexture(GL_TEXTURE0);
-//        glBindTexture(GL_TEXTURE_2D, render_fbo.textures_[1]); // Bind the brightpass texture
-//
-//        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-//
-//        // Now we have a downscaled image. Lets blur it.
-//
-//        shader_filter.use();
-//
-//        glUniform1i(glGetUniformLocation(shader_filter.program_, "hdr_image"), 0);
-//
-//        filter_fbos[1].bind_draw(); // Use the second filter FBO
-//
-//        glActiveTexture(GL_TEXTURE0);
-//        glBindTexture(GL_TEXTURE_2D, filter_fbos[0].textures_[0]);
-//
-//        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-//
-//        filter_fbos[0].bind_draw();
-//
-//        glActiveTexture(GL_TEXTURE0);
-//        glBindTexture(GL_TEXTURE_2D, filter_fbos[1].textures_[0]);
-//
-//        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-//
-//
-//        glActiveTexture(GL_TEXTURE0);
-//        glBindTexture(GL_TEXTURE_2D, 0);
-//        glActiveTexture(GL_TEXTURE1);
-//        glBindTexture(GL_TEXTURE_2D, 0);
-
-
-
-
-//        //-----------------------------------------------
-//        // Combine
-//
-//        shader_combine.use();
-//        glUniform1i(glGetUniformLocation(shader_combine.program_, "hdr_image"), 0);
-//        glUniform1i(glGetUniformLocation(shader_combine.program_, "bloom_image"), 1);
-//
-//        // Render to default frame buffer
-//        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//        glViewport(0, 0, window_width_, window_height_);
-//
-//        glActiveTexture(GL_TEXTURE1);
-//        glBindTexture(GL_TEXTURE_2D, filter_fbos[0].textures_[1]); // Use the texture in the second filter FBO
-//
-//        glActiveTexture(GL_TEXTURE0);
-//        glBindTexture(GL_TEXTURE_2D, render_fbo.textures_[0]); // And the original HDR image
-//
-//        // Finally draw the result
-//
-//        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-//
-//        glBindVertexArray(0);
-//
-//        glActiveTexture(GL_TEXTURE0);
-//        glBindTexture(GL_TEXTURE_2D, 0);
-//        glActiveTexture(GL_TEXTURE1);
-//        glBindTexture(GL_TEXTURE_2D, 0);
-//
-//        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
-
-
         shader_filter.use();
         glUniform1i(glGetUniformLocation(shader_filter.program_, "hdr_image"), 0);
 
         glBindVertexArray(quad.vao_); // Bind the quad's VAO
 
-        filter_fbos[0].bind_draw(); // Use the first filter FBO
+        filter_fbos[0].bind(); // Use the first filter FBO
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, render_fbo.textures_[1]); // Bind the brightpass texture
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-        filter_fbos[1].bind_draw(); // Use the second filter FBO
+        filter_fbos[1].bind(); // Use the second filter FBO
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, filter_fbos[0].textures_[0]);
@@ -586,7 +521,6 @@ namespace rengine {
 
 
         // Finally draw the result
-
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
         glBindVertexArray(0);
@@ -668,14 +602,14 @@ namespace rengine {
     void Engine::update_camera(GLuint ubo_transforms, const glm::mat4 &model) const {
 
         // Set up the projection matrix and feed the data to the uniform block object
-        const glm::mat4 projection = glm::perspective(camera_.Zoom, (GLfloat) window_width_ / (GLfloat) window_height_,
+        const glm::mat4 projection = glm::perspective(camera_.Zoom,
+                                                      (GLfloat) window_width_ / (GLfloat) window_height_,
                                                       0.1f,
                                                       1000.0f);
         // To the same for the view matrix
         const glm::mat4 view = camera_.GetViewMatrix();
 
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_transforms);
-
         glm::mat4 *matrices = reinterpret_cast<glm::mat4 *>(glMapBufferRange(GL_UNIFORM_BUFFER,
                                                                              0,
                                                                              2 * sizeof(glm::mat4),
@@ -709,7 +643,7 @@ namespace rengine {
                     100.0f * std::sin(time * 1.1f + (5.0f * i_f)) * std::cos(time * 2.3f + (9.0f * i_f)),
                     15.0f,
                     100.0f * std::sin(time * 1.5f + (6.0f * i_f)) * std::cos(time * 1.9f + (11.0f *
-                                                                                            i_f))); // 300.0f * std::sin(time * i_f * 0.7f) * std::cos(time * i_f * 0.9f) - 600.0f);
+                                                                                            i_f)));
             lights[i].color = glm::vec3(std::cos(i_f * 14.0f) * 0.5f + 0.8f,
                                         std::sin(i_f * 17.0f) * 0.5f + 0.8f,
                                         std::sin(i_f * 13.0f) * std::cos(i_f * 19.0f) * 0.5f + 0.8f);
