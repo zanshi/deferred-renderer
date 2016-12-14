@@ -21,7 +21,7 @@ namespace rengine {
         for (GLuint i = 0; i < nr_textures; i++) {
             glBindTexture(GL_TEXTURE_2D, textures_[i]);
 //            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width_, height_, 0, GL_RGB, GL_FLOAT, nullptr);
-            glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA16F, width_, height_);
+            glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB16F, width_, height_);
 //            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 //            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 //            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

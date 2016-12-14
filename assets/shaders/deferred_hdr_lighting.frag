@@ -1,11 +1,10 @@
-#version 410 core
+#version 430 core
 
 layout(location = 0) out vec4 FragColor;
 layout(location = 1) out vec4 BrightColor;
 
-uniform sampler2D gPosition;
-uniform sampler2D gNormal;
-uniform sampler2D gAlbedoSpec;
+layout(binding = 0) uniform usampler2D gbuffer_tex0;
+layout(binding = 1) uniform sampler2D gbuffer_tex1;
 
 struct Light {
     vec3 Position;
@@ -18,7 +17,7 @@ struct Light {
     uint pad3;
 };
 
-const int NR_LIGHTS = 64;
+const int NR_LIGHTS = 32;
 
 //uniform Light lights[NR_LIGHTS];
 
@@ -35,42 +34,29 @@ uniform uint showNormals = 1;
 const float bloom_thresh_min = 0.8;
 const float bloom_thresh_max = 1.2;
 
-const float PI = 3.14159265359;
-
-float D_GGX_TR(vec3 N, vec3 H, float a)
+struct fragment_info_t
 {
-    float a2     = a*a;
-    float NdotH  = max(dot(N, H), 0.0);
-    float NdotH2 = NdotH*NdotH;
+    vec3 color;
+    vec3 normal;
+    float specular_power;
+    vec3 ws_coord;
+    uint material_id;
+};
 
-    float nom    = a2;
-    float denom  = (NdotH2 * (a2 - 1.0) + 1.0);
-    denom        = PI * denom * denom;
-
-    return nom / denom;
-}
-
-float GeometrySchlickGGX(float NdotV, float k)
+void unpackGBuffer(ivec2 coord,
+                   out fragment_info_t fragment)
 {
-    float nom   = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
+    uvec4 data0 = texelFetch(gbuffer_tex0, ivec2(coord), 0);
+    vec4 data1 = texelFetch(gbuffer_tex1, ivec2(coord), 0);
+    vec2 temp;
 
-    return nom / denom;
-}
+    temp = unpackHalf2x16(data0.y);
+    fragment.color = vec3(unpackHalf2x16(data0.x), temp.x);
+    fragment.normal = normalize(vec3(temp.y, unpackHalf2x16(data0.z)));
+    fragment.material_id = data0.w;
 
-float GeometrySmith(vec3 N, vec3 V, vec3 L, float k)
-{
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
-    float ggx1 = GeometrySchlickGGX(NdotV, k);
-    float ggx2 = GeometrySchlickGGX(NdotL, k);
-
-    return ggx1 * ggx2;
-}
-
-vec3 fresnelSchlick(float cosTheta, vec3 F0)
-{
-    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+    fragment.ws_coord = data1.xyz;
+    fragment.specular_power = data1.w;
 }
 
 void main()
@@ -78,13 +64,14 @@ void main()
 
 
 //    // Retrieve data from gbuffer
-    ivec2 tex_coord = ivec2(gl_FragCoord.xy);
 
-    vec3 FragPos = vec3(texelFetch(gPosition, ivec2(tex_coord),0));
-    vec3 Normal = vec3(texelFetch(gNormal, ivec2(tex_coord), 0));
-    vec4 temp = texelFetch(gAlbedoSpec, ivec2(tex_coord), 0);
-    vec3 Diffuse = temp.rgb;
-    float Specular = temp.a;
+    fragment_info_t fragment;
+
+
+    unpackGBuffer(ivec2(gl_FragCoord.xy), fragment);
+
+
+
 
 //    vec3 F0 = vec3(0.04);
 //    F0      = mix(F0, Diffuse, metalness);
@@ -97,22 +84,22 @@ void main()
     // Then calculate lighting as usual
 //    vec3 lighting  = Diffuse * 0.08; // hard-coded ambient component
     vec3 lighting  = vec3(0.0);
-    vec3 viewDir  = normalize(viewPos - FragPos);
+    vec3 viewDir  = normalize(viewPos - fragment.ws_coord);
     for(int i = 0; i < NR_LIGHTS; ++i)
     {
         // Diffuse
         //        vec3 templight = vec3(0.5f * i, 0.5 * i, 0.5 * i);
-        vec3 lightDir = normalize(lights[i].Position - FragPos);
-        vec3 diffuse = max(dot(Normal, lightDir), 0.0) * Diffuse * lights[i].Color;
+        vec3 lightDir = normalize(lights[i].Position - fragment.ws_coord);
+        vec3 diffuse = max(dot(fragment.normal, lightDir), 0.0) * fragment.color * lights[i].Color;
 
         // Specular
         vec3 halfwayDir = normalize(lightDir + viewDir);
-//        float spec = pow(max(dot(Normal, halfwayDir), 0.0), 16.0);
-        float spec = D_GGX_TR(Normal, halfwayDir, 0.7);
-        vec3 specular = lights[i].Color * spec * Specular;
+        float spec = pow(max(dot(fragment.normal, halfwayDir), 0.0), 16.0);
+//        float spec = D_GGX_TR(fragment.normal, halfwayDir, 0.7);
+        vec3 specular = lights[i].Color * spec * fragment.specular_power;
 
         // Attenuation
-        float distance = length(lights[i].Position - FragPos);
+        float distance = length(lights[i].Position - fragment.ws_coord);
 //        float attenuation = 50.0 / (pow(distance, 2.0) +  + 1.0);
         float attenuation = 1.0 / (1.0 + lights[i].Linear * distance + lights[i].Quadratic * distance * distance);
 
@@ -124,7 +111,7 @@ void main()
 
 //    FragColor = vec4(lighting, 1.0);
 
-    FragColor = vec4(mix(lighting, Normal, showNormals),1.0);
+    FragColor = vec4(mix(lighting, fragment.normal, showNormals),1.0);
 
     // ------------------------
     /// HDR

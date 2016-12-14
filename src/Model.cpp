@@ -15,9 +15,9 @@
 
 namespace rengine {
 
-    void Model::draw(GLuint current_program) const {
+    void Model::draw() const {
         for (auto &&mesh : meshes_) {
-            mesh.draw(current_program);
+            mesh.draw();
         }
     }
 

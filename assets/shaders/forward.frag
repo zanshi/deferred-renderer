@@ -1,11 +1,11 @@
-#version 410 core
+#version 430 core
 
 layout(location = 0) out vec4 FragColor;
 layout(location = 1) out vec4 BrightColor;
 
-uniform sampler2D texture_diffuse1;
-uniform sampler2D texture_specular1;
-uniform sampler2D texture_normal1;
+layout(binding = 0) uniform sampler2D texture_diffuse1;
+layout(binding = 1) uniform sampler2D texture_specular1;
+layout(binding = 2) uniform sampler2D texture_normal1;
 
 struct Light {
     vec3 Position;
@@ -23,7 +23,7 @@ const int NR_LIGHTS = 32;
 //uniform Light lights[NR_LIGHTS];
 
 layout (std140) uniform light_block {
-    Light lights[32];
+    Light lights[NR_LIGHTS];
 };
 
 uniform vec3 viewPos;
@@ -63,8 +63,8 @@ void main()
 
 
         // Then calculate lighting as usual
-        vec3 lighting  = Diffuse * 0.08; // hard-coded ambient component
-    //    vec3 lighting  = vec3(0.0);
+//        vec3 lighting  = Diffuse * 0.08; // hard-coded ambient component
+        vec3 lighting  = vec3(0.0);
         vec3 viewDir  = normalize(viewPos - fs_in.FragPos);
         for(int i = 0; i < NR_LIGHTS; ++i)
         {

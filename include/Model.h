@@ -22,7 +22,7 @@ namespace rengine {
             this->load_model(path);
         }
 
-        void draw(GLuint current_program) const;
+        void draw() const;
 
     private:
         /*  Model Data  */

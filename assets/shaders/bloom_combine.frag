@@ -1,4 +1,4 @@
-#version 410 core
+#version 430 core
 
 uniform sampler2D hdr_image;
 uniform sampler2D bloom_image;
