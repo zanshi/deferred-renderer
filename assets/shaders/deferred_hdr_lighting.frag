@@ -18,12 +18,12 @@ struct Light {
     uint pad3;
 };
 
-const int NR_LIGHTS = 32;
+const int NR_LIGHTS = 64;
 
 //uniform Light lights[NR_LIGHTS];
 
 layout (std140) uniform light_block {
-    Light lights[32];
+    Light lights[NR_LIGHTS];
 };
 
 
@@ -34,6 +34,44 @@ uniform uint showNormals = 1;
 // HDR bloom
 const float bloom_thresh_min = 0.8;
 const float bloom_thresh_max = 1.2;
+
+const float PI = 3.14159265359;
+
+float D_GGX_TR(vec3 N, vec3 H, float a)
+{
+    float a2     = a*a;
+    float NdotH  = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH*NdotH;
+
+    float nom    = a2;
+    float denom  = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom        = PI * denom * denom;
+
+    return nom / denom;
+}
+
+float GeometrySchlickGGX(float NdotV, float k)
+{
+    float nom   = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+
+    return nom / denom;
+}
+
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float k)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx1 = GeometrySchlickGGX(NdotV, k);
+    float ggx2 = GeometrySchlickGGX(NdotL, k);
+
+    return ggx1 * ggx2;
+}
+
+vec3 fresnelSchlick(float cosTheta, vec3 F0)
+{
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
 
 void main()
 {
@@ -48,14 +86,17 @@ void main()
     vec3 Diffuse = temp.rgb;
     float Specular = temp.a;
 
+//    vec3 F0 = vec3(0.04);
+//    F0      = mix(F0, Diffuse, metalness);
+
 //    vec3 FragPos = texture(gPosition, TexCoords).rgb;
 //    vec3 Normal = texture(gNormal, TexCoords).rgb;
 //    vec3 Diffuse = texture(gAlbedoSpec, TexCoords).rgb;
 //    float Specular = texture(gAlbedoSpec, TexCoords).a;
 
     // Then calculate lighting as usual
-    vec3 lighting  = Diffuse * 0.08; // hard-coded ambient component
-//    vec3 lighting  = vec3(0.0);
+//    vec3 lighting  = Diffuse * 0.08; // hard-coded ambient component
+    vec3 lighting  = vec3(0.0);
     vec3 viewDir  = normalize(viewPos - FragPos);
     for(int i = 0; i < NR_LIGHTS; ++i)
     {
@@ -66,7 +107,8 @@ void main()
 
         // Specular
         vec3 halfwayDir = normalize(lightDir + viewDir);
-        float spec = pow(max(dot(Normal, halfwayDir), 0.0), 16.0);
+//        float spec = pow(max(dot(Normal, halfwayDir), 0.0), 16.0);
+        float spec = D_GGX_TR(Normal, halfwayDir, 0.7);
         vec3 specular = lights[i].Color * spec * Specular;
 
         // Attenuation

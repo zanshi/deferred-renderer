@@ -20,25 +20,31 @@ namespace rengine {
 
         for (GLuint i = 0; i < nr_textures; i++) {
             glBindTexture(GL_TEXTURE_2D, textures_[i]);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width_, height_, 0, GL_RGB, GL_FLOAT, nullptr);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width_, height_, 0, GL_RGB, GL_FLOAT, nullptr);
+            glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA16F, width_, height_);
+//            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, textures_[i], 0);
 
             attachments.push_back(GL_COLOR_ATTACHMENT0 + i);
         }
 
-        glDrawBuffers(nr_textures, attachments.data());
-
-
         if (gen_depth_buffer) {
-            glGenRenderbuffers(1, &tex_depth_);
-            glBindRenderbuffer(GL_RENDERBUFFER, tex_depth_);
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width_, height_);
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, tex_depth_);
+//            glGenRenderbuffers(1, &tex_depth_);
+//            glBindRenderbuffer(GL_RENDERBUFFER, tex_depth_);
+//            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width_, height_);
+//            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, tex_depth_);
+
+            glGenTextures(1, &tex_depth_);
+            glBindTexture(GL_TEXTURE_2D, tex_depth_);
+            glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, width_, height_);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tex_depth_, 0);
+
         }
+
+        glDrawBuffers(nr_textures, attachments.data());
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             std::cout << "Framebuffer not complete!" << std::endl;
