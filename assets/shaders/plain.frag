@@ -1,9 +1,11 @@
 #version 410 core
-in vec3 ourColor;
 
 out vec4 color;
 
+uniform sampler2D brightImage;
+
 void main()
 {
-    color = vec4(ourColor, 1.0f);
+    color = vec4(texture(brightImage, gl_FragCoord.yx).rgb, 1.0);
+
 }

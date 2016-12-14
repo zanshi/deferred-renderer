@@ -77,7 +77,7 @@ namespace rengine {
         GLfloat light_quadratic_factor_;
         GLuint lights_ubo_;
 
-        const unsigned int nrOfLights_ = 32;
+        const unsigned int nrOfLights_ = 64;
 
         static GLuint show_normals_;
         static bool should_render_deferred_;
@@ -104,7 +104,7 @@ namespace rengine {
                                     const GLuint ubo_transforms) const;
 
         void bloom_pass(const FBO &render_fbo, const std::array<FBO, 2> &filter_fbos, const Shader &shader_filter,
-                        const Shader &shader_combine, const Quad &quad) const;
+                                const Shader &shader_combine, const Shader &shader_plain, const Quad &quad) const;
 
         void handle_input(float delta_time);
 

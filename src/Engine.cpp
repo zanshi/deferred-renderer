@@ -110,28 +110,13 @@ namespace rengine {
 
     bool Engine::enable_gl_features() {
 
-//        glEnable(GL_DEPTH_TEST);
-
         return true;
     }
 
     bool Engine::load_scene() {
 
 //        models_.push_back(Model{"../assets/models/nano/nanosuit.obj"});
-//        models_.push_back(Model{"../assets/bible/objects/dragon.sbm"});
-//        models_.push_back(Model{"../assets/models/blender/Blenderman.dae"});
-//        models_.push_back(Model{"../assets/models/e.dae"});
-//        models_.push_back(Model{"../assets/models/bmw/bmw.obj"});
-//        models_.push_back(Model{"../assets/models/cottage/Snow covered CottageFBX.fbx"});
-//        models_.push_back(Model{"../assets/models/bmx/bmx.obj"});
-//        models_.push_back(Model{"../assets/models/city/Scifi Floating City/Scifi Floating City.obj"});
-//        models_.push_back(Model{"../assets/models/bathroom/BathroomSet02.obj"});
-//        models_.push_back(Model{"../assets/models/rungholt/rungholt.obj"});
-//        models_.push_back(Model{"../assets/models/crytek/sponza.obj"});
-//        models_.push_back(Model{"../assets/models/cyborg/Cyborg.obj"});
-//        models_.push_back(Model{"../assets/models/head/head.OBJ"});
         models_.push_back(Model{"../assets/models/sponza2/sponza.dae"});
-//        models_.push_back(Model{"../assets/models/crytek-sponza/sponza.obj"});
 
         return true;
 
@@ -156,6 +141,9 @@ namespace rengine {
         auto filter_shader = Shader{"../assets/shaders/gaussian_blur.vert", "../assets/shaders/gaussian_blur.frag"};
         auto combine_bloom_shader = Shader{"../assets/shaders/bloom_combine.vert",
                                            "../assets/shaders/bloom_combine.frag"};
+        auto plain_shader = Shader{"../assets/shaders/plain.vert",
+                                   "../assets/shaders/plain.frag"};
+
         auto forward_shader = Shader{"../assets/shaders/forward.vert",
                                      "../assets/shaders/forward.frag"};
 
@@ -178,26 +166,23 @@ namespace rengine {
         // ------------------------------------------------------------------------------------
         // Set up the uniform transform block for each shader
         // should probably do this in the shader manager somehow
-        GLuint transform_ubo = glGetUniformBlockIndex(deferred_geometry_shader.program_, "TransformBlock");
-        glUniformBlockBinding(deferred_geometry_shader.program_, transform_ubo, 0);
+        GLuint deferred_transform_ubo = glGetUniformBlockIndex(deferred_geometry_shader.program_, "TransformBlock");
+        glUniformBlockBinding(deferred_geometry_shader.program_, deferred_transform_ubo, 0);
+
+        GLuint forward_transform_ubo = glGetUniformBlockIndex(forward_shader.program_, "TransformBlock");
+        glUniformBlockBinding(forward_shader.program_, forward_transform_ubo, 0);
 
         GLuint ubo_transforms;
         glGenBuffers(1, &ubo_transforms);
 
         glBindBuffer(GL_UNIFORM_BUFFER, ubo_transforms);
-        glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr, GL_STREAM_DRAW);
+        glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-        glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo_transforms, 0, 2 * sizeof(glm::mat4));
 
 
         // ------------------------------------------------------------------------------------
         // Set up lights
         setup_lights();
-
-
-//        GLuint lights_ubo = glGetUniformBlockIndex(deferred_lighting_shader.program_, "light_block");
-//        glUniformBlockBinding(deferred_lighting_shader.program_, lights_ubo, 1);
 
         GLuint deferred_lights_idx = glGetUniformBlockIndex(deferred_lighting_shader.program_, "light_block");
         glUniformBlockBinding(deferred_lighting_shader.program_, deferred_lights_idx, 1);
@@ -209,7 +194,7 @@ namespace rengine {
 
         glBindBuffer(GL_UNIFORM_BUFFER, lights_ubo_);
         glBufferData(GL_UNIFORM_BUFFER, nrOfLights_ * sizeof(Light), nullptr, GL_DYNAMIC_DRAW);
-
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 
         // ------------------------------------------------------------------------------------
@@ -217,8 +202,8 @@ namespace rengine {
 
         const auto gbuffer = GBuffer{window_width_, window_height_};
         const auto render_fbo = FBO{window_width_, window_height_, 2, true};
-        const auto filter_fbos = std::array<FBO, 2>{{FBO{window_height_, window_width_, 1, false},
-                                                            FBO{window_width_, window_height_, 1, false}}};
+        const auto filter_fbos = std::array<FBO, 2>{{FBO{window_width_ / 2, window_height_ / 2},
+                                                            FBO{window_width_ / 2, window_height_ / 2}}};
 
 //        // Create quad for rendering the final image
         auto quad = Quad{};
@@ -230,8 +215,11 @@ namespace rengine {
         GLfloat last_frame_time = 0.0f;
 
 
+        static const GLuint uint_zeros[] = { 0, 0, 0 };
+        static const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        static const GLfloat float_ones = 1.0f;
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
         while (!glfwWindowShouldClose(window_)) {
 
@@ -268,17 +256,21 @@ namespace rengine {
             // ------------------------------------------------------
             // RENDERING
 
-            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-            glViewport(0, 0, window_width_, window_height_);
+
+
+//            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+//            glViewport(0, 0, window_width_, window_height_);
 
             if (should_render_deferred_) {
                 render_deferred(deferred_geometry_shader, deferred_lighting_shader, ubo_transforms, render_fbo, quad,
                                 gbuffer);
             } else {
+                glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+                glViewport(0, 0, window_width_, window_height_);
                 render_forward(forward_shader, ubo_transforms, render_fbo);
             }
 
-            bloom_pass(render_fbo, filter_fbos, filter_shader, combine_bloom_shader, quad);
+            bloom_pass(render_fbo, filter_fbos, filter_shader, combine_bloom_shader, plain_shader, quad);
 
             ImGui::Render();
 
@@ -310,7 +302,12 @@ namespace rengine {
         render_fbo.bind_draw();
 
         // Clear the FBO so that we have a clean frame
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        static const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        static const GLfloat float_ones = 1.0f;
+        glClearBufferfv(GL_COLOR, 0, black);
+        glClearBufferfv(GL_COLOR, 1, black);
+        glClearBufferfv(GL_DEPTH, 0, &float_ones);
 
         forward_shader.use();
 
@@ -400,7 +397,16 @@ namespace rengine {
                                         const GLuint ubo_transforms) const {
 
         gbuffer.bind_for_geometry_pass();
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        static const GLint uint_zeros[] = { 0, 0, 0, 0};
+        static const GLfloat black[] = { 0.0f, 0.0f, 0.0f };
+        static const GLfloat float_ones = 1.0f;
+
+        glClearBufferfv(GL_COLOR, 0, black);
+        glClearBufferfv(GL_COLOR, 1, black);
+        glClearBufferiv(GL_COLOR, 2, uint_zeros);
+        glClearBufferfv(GL_DEPTH, 0, &float_ones);
 
         g_geometry_shader.use();
 
@@ -426,21 +432,28 @@ namespace rengine {
 //        glDisable(GL_CULL_FACE);
         glDisable(GL_DEPTH_TEST);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
 
     void Engine::deferred_lighting_pass(const Shader &lighting_shader, const GBuffer &gbuffer, const FBO &render_fbo,
                                         const Quad &quad) const {
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//        glDrawBuffer(GL_BACK);
 
-        gbuffer.bind_for_lighting_pass();
         render_fbo.bind_draw();
 
+        static const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        static const GLfloat float_ones = 1.0f;
+        glClearBufferfv(GL_COLOR, 0, black);
+        glClearBufferfv(GL_COLOR, 1, black);
+        glClearBufferfv(GL_DEPTH, 0, &float_ones);
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         lighting_shader.use();
+        gbuffer.bind_for_lighting_pass();
+
 
         glUniform1ui(glGetUniformLocation(lighting_shader.program_, "showNormals"), show_normals_);
 
@@ -464,14 +477,15 @@ namespace rengine {
     }
 
     void Engine::bloom_pass(const FBO &render_fbo, const std::array<FBO, 2> &filter_fbos, const Shader &shader_filter,
-                            const Shader &shader_combine, const Quad &quad) const {
+                            const Shader &shader_combine, const Shader &shader_plain, const Quad &quad) const {
 
 
         //-----------------------------------------------
         // Filter
 
-        shader_filter.use();
-        glUniform1i(glGetUniformLocation(shader_filter.program_, "hdr_image"), 0);
+        shader_plain.use();
+
+        glUniform1i(glGetUniformLocation(shader_plain.program_, "brightImage"), 0);
 
         glBindVertexArray(quad.vao_); // Bind the quad's VAO
 
@@ -482,12 +496,26 @@ namespace rengine {
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
+        // Now we have a downscaled image. Lets blur it.
+
+        shader_filter.use();
+
+        glUniform1i(glGetUniformLocation(shader_filter.program_, "hdr_image"), 0);
+
         filter_fbos[1].bind_draw(); // Use the second filter FBO
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, filter_fbos[0].textures_[0]);
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+        filter_fbos[0].bind_draw();
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, filter_fbos[1].textures_[0]);
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -505,9 +533,10 @@ namespace rengine {
 
         // Render to default frame buffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, window_width_, window_height_);
 
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, filter_fbos[1].textures_[0]); // Use the texture in the second filter FBO
+        glBindTexture(GL_TEXTURE_2D, filter_fbos[0].textures_[0]); // Use the texture in the second filter FBO
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, render_fbo.textures_[0]); // And the original HDR image
@@ -536,7 +565,7 @@ namespace rengine {
 
     void Engine::handle_input(float delta_time) {
 
-        ImGuiIO& io = ImGui::GetIO();
+        ImGuiIO &io = ImGui::GetIO();
 
         if (io.KeysDown[GLFW_KEY_ESCAPE])
             glfwSetWindowShouldClose(window_, GL_TRUE);
@@ -601,20 +630,17 @@ namespace rengine {
         // To the same for the view matrix
         const glm::mat4 view = camera_.GetViewMatrix();
 
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_transforms);
 
-        glBindBuffer(GL_UNIFORM_BUFFER, ubo_transforms);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection * view));
-//        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        glm::mat4 *matrices = reinterpret_cast<glm::mat4 *>(glMapBufferRange(GL_UNIFORM_BUFFER,
+                                                                             0,
+                                                                             2 * sizeof(glm::mat4),
+                                                                             GL_MAP_WRITE_BIT |
+                                                                             GL_MAP_INVALIDATE_BUFFER_BIT));
+        matrices[0] = projection * view;
+        matrices[1] = model;
 
-
-//        glBindBuffer(GL_UNIFORM_BUFFER, ubo_transforms);
-//        glBufferSubData(
-//                GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(view));
-
-        glBufferSubData(
-                GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(model));
-
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        glUnmapBuffer(GL_UNIFORM_BUFFER);
 
     }
 
@@ -648,7 +674,6 @@ namespace rengine {
         }
 
         glUnmapBuffer(GL_UNIFORM_BUFFER);
-
 
     }
 

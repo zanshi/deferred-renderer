@@ -15,7 +15,7 @@ namespace rengine {
 
     public :
 
-        FBO(int width, int height, GLuint nr_textures = 1, bool gen_depth_buffer = true);
+        FBO(int width, int height, GLuint nr_textures = 1, bool gen_depth_buffer = false);
 
         ~FBO();
 
