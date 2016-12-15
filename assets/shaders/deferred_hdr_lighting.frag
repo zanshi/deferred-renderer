@@ -13,11 +13,11 @@ struct Light {
     uint pad1;
     float Linear;
     float Quadratic;
-    uint pad2;
+    float Radius;
     uint pad3;
 };
 
-const int NR_LIGHTS = 32;
+const int NR_LIGHTS = 64;
 
 layout (std140) uniform light_block {
     Light lights[NR_LIGHTS];
@@ -60,26 +60,29 @@ void main()
 
 
     // Then calculate lighting as usual
-    //    vec3 lighting  = fragment.color * 0.08; // hard-coded ambient component
-    vec3 lighting  = vec3(0.0);
+        vec3 lighting  = fragment.color * 0.08; // hard-coded ambient component
+//    vec3 lighting  = vec3(0.0);
     vec3 viewDir  = normalize(viewPos - fragment.ws_coord);
     for(int i = 0; i < NR_LIGHTS; ++i) {
         // Diffuse
         vec3 L = lights[i].Position - fragment.ws_coord;
-        vec3 lightDir = normalize(L);
-        vec3 diffuse = max(dot(fragment.normal, lightDir), 0.0) * fragment.color * lights[i].Color;
-
-        // Specular
-        vec3 halfwayDir = normalize(lightDir + viewDir);
-        float spec = pow(max(dot(fragment.normal, halfwayDir), 0.0), 16.0);
-        vec3 specular = lights[i].Color * spec * fragment.specular_power;
-
-        // Attenuation
         float distance = length(L);
-        float attenuation = 1.0 / (1.0 + lights[i].Linear * distance + lights[i].Quadratic * distance * distance);
 
-        lighting += (diffuse + specular) * attenuation;
+        if(distance < lights[i].Radius) {
 
+            vec3 lightDir = normalize(L);
+            vec3 diffuse = max(dot(fragment.normal, lightDir), 0.0) * fragment.color * lights[i].Color;
+
+            // Specular
+            vec3 halfwayDir = normalize(lightDir + viewDir);
+            float spec = pow(max(dot(fragment.normal, halfwayDir), 0.0), 16.0);
+            vec3 specular = lights[i].Color * spec * fragment.specular_power;
+
+            // Attenuation
+            float attenuation = 1.0 / (1.0 + lights[i].Linear * distance + lights[i].Quadratic * distance * distance);
+
+            lighting += (diffuse + specular) * attenuation;
+        }
     }
 
 //    FragColor = vec4(lighting, 1.0);

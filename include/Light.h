@@ -17,7 +17,7 @@ namespace rengine {
         unsigned int        : 32;       // pad1
         GLfloat linear;
         GLfloat quadratic;
-        unsigned int        : 32;       // pad2
+        GLfloat radius;                 // pad2
         unsigned int        : 32;       // pad3
     };
 #pragma pack (pop)

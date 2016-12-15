@@ -124,8 +124,9 @@ namespace rengine {
 
 
     bool Engine::setup_camera() {
-        camera_ = Camera{glm::vec3(0.0f, 0.0f, 4.0f)};
+        camera_ = Camera{glm::vec3(-120.0f, 20.0f, 0.0f)};
         first_mouse_movement_ = true;
+        camera_enabled_ = false;
 
         return true;
     }
@@ -177,7 +178,6 @@ namespace rengine {
         // ------------------------------------------------------------------------------------
         // Set up lights
 
-
         GLuint deferred_lights_idx = glGetUniformBlockIndex(deferred_lighting_shader.program_, "light_block");
         glUniformBlockBinding(deferred_lighting_shader.program_, deferred_lights_idx, 1);
 
@@ -187,22 +187,10 @@ namespace rengine {
         glGenBuffers(1, &lights_ubo_);
 
         glBindBuffer(GL_UNIFORM_BUFFER, lights_ubo_);
-//        glBufferStorage(GL_UNIFORM_BUFFER,
-//                        nrOfLights_ * sizeof(Light), nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT);
-
-
         glBufferData(GL_UNIFORM_BUFFER, nrOfLights_ * sizeof(Light), nullptr, GL_STREAM_DRAW);
 
-//        lights_gl_ = reinterpret_cast<Light *> (glMapBufferRange(
-//                GL_UNIFORM_BUFFER,
-//                0,
-//                nrOfLights_ * sizeof(Light),
-//                GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT ));
-
-//
         setup_lights();
-//
-////
+
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 
@@ -251,8 +239,8 @@ namespace rengine {
             {
                 handle_input(delta_time);
 
-                ImGui::Text("Hello, world!");
-                ImGui::SliderFloat("Linear light factor", &light_linear_factor_, 0.0f, 0.4f);
+                ImGui::Text("Settings");
+                ImGui::SliderFloat("Linear light factor", &light_linear_factor_, 0.0f, 2.0f);
 //                ImGui::SliderFloat("Quadratic light factor", &light_quadratic_factor_, 0.0f, 1.0f);
                 ImGui::SliderFloat("Quadratic light factor", &light_quadratic_factor_, 0.0f, 0.4f);
                 if (ImGui::Button("Render deferred")) should_render_deferred_ ^= 1;
@@ -320,8 +308,8 @@ namespace rengine {
 
         glEnable(GL_DEPTH_TEST);
 //        glDepthFunc(GL_LEQUAL);
-//        glEnable(GL_CULL_FACE);
-//        glCullFace(GL_BACK);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
 
         glm::mat4 model;
 
@@ -332,7 +320,7 @@ namespace rengine {
         render_scene();
 
 
-//        glDisable(GL_CULL_FACE);
+        glDisable(GL_CULL_FACE);
         glDisable(GL_DEPTH_TEST);
 
 
@@ -341,8 +329,8 @@ namespace rengine {
 
     void Engine::setup_lights() {
 
-        light_linear_factor_ = 0.045f;
-        light_quadratic_factor_ = 0.0075f;
+        light_linear_factor_ = 0.14f;
+        light_quadratic_factor_ = 0.07f;
 
 //        const GLfloat time = static_cast<GLfloat>(glfwGetTime()) * 0.05f;
 //
@@ -412,14 +400,15 @@ namespace rengine {
 
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
-//        glEnable(GL_CULL_FACE);
-//        glCullFace(GL_BACK);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
 
 
         // Draw the loaded model
         glm::mat4 model;
 //        model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
 //        model = glm::scale(model, glm::vec3(0.25f));    // It's a bit too big for our scene, so scale it down
+//        model = glm::rotate(model, 45.0f, glm::vec3{0.0f, 1.0f, 0.0f});
 //        glUniformMatrix4fv(glGetUniformLocation(g_geometry_shader.program_, "model"), 1, GL_FALSE,
 //                           glm::value_ptr(model));
 
@@ -429,7 +418,7 @@ namespace rengine {
         // Render the scene. (Also binds relevant textures)
         render_scene();
 
-//        glDisable(GL_CULL_FACE);
+        glDisable(GL_CULL_FACE);
         glDisable(GL_DEPTH_TEST);
 
     }
@@ -541,12 +530,127 @@ namespace rengine {
     }
 
 
+    void Engine::update_camera(GLuint ubo_transforms, const glm::mat4 &model) const {
+
+        // Set up the projection matrix and feed the data to the uniform block object
+        const glm::mat4 projection = glm::perspective(camera_.Zoom,
+                                                      (GLfloat) window_width_ / (GLfloat) window_height_,
+                                                      0.1f,
+                                                      1000.0f);
+        // To the same for the view matrix
+        const glm::mat4 view = camera_.GetViewMatrix();
+
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_transforms);
+        glm::mat4 *matrices = reinterpret_cast<glm::mat4 *>(glMapBufferRange(GL_UNIFORM_BUFFER,
+                                                                             0,
+                                                                             2 * sizeof(glm::mat4),
+                                                                             GL_MAP_WRITE_BIT |
+                                                                             GL_MAP_INVALIDATE_BUFFER_BIT));
+        matrices[0] = projection * view;
+        matrices[1] = model;
+
+        glUnmapBuffer(GL_UNIFORM_BUFFER);
+
+    }
+
+
+    void Engine::update_lights(const Shader &shader) const {
+
+        shader.use();
+
+        glBindBufferBase(GL_UNIFORM_BUFFER, 1, lights_ubo_);
+
+        Light *lights = reinterpret_cast<Light *>(glMapBufferRange(GL_UNIFORM_BUFFER,
+                                                                   0,
+                                                                   nrOfLights_ * sizeof(Light),
+                                                                   GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT));
+
+        const GLfloat time = static_cast<GLfloat>(glfwGetTime()) * 0.05f;
+        constexpr GLfloat threshold = std::pow(2.0f, 16) / 30.0f;
+
+        for (unsigned int i = 0; i < nrOfLights_; i++) {
+            const float i_f = ((float) i - 7.5f) * 0.1f + 0.3f;
+
+            lights[i].position = glm::vec3(
+                    100.0f * std::sin(time * 1.1f + (5.0f * i_f)) * std::cos(time * 2.3f + (9.0f * i_f)),
+                    15.0f,
+                    100.0f * std::sin(time * 1.5f + (6.0f * i_f)) * std::cos(time * 1.9f + (11.0f *
+                                                                                            i_f)));
+            glm::vec3 color = glm::vec3(std::cos(i_f * 14.0f) * 0.5f + 0.8f,
+                                        std::sin(i_f * 17.0f) * 0.5f + 0.8f,
+                                        std::sin(i_f * 13.0f) * std::cos(i_f * 19.0f) * 0.5f + 0.8f);
+
+            lights[i].color = color;
+            lights[i].linear = light_linear_factor_;
+            lights[i].quadratic = light_quadratic_factor_;
+
+            const GLfloat max_brightness = std::fmax(std::fmax(color.r, color.g), color.b);
+            lights[i].radius = (-light_linear_factor_ +
+                                std::sqrt(light_linear_factor_ * light_linear_factor_ -
+                                                             4 * light_quadratic_factor_ *
+                                                             (1.0f - threshold * max_brightness))) /
+                               (2 * light_quadratic_factor_);
+
+//            lights[i].radius = 25.0f;
+//            lights[i].falloff = 0.15f;
+        }
+
+        glUnmapBuffer(GL_UNIFORM_BUFFER);
+
+    }
+
+    void Engine::error_callback(int error, const char *description) {
+        fputs(description, stderr);
+    }
+
+    void Engine::key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+            glfwSetWindowShouldClose(window, GL_TRUE);
+
+        if (key >= 0 && key < 1024) {
+            if (action == GLFW_PRESS)
+                keys_[key] = true;
+            else if (action == GLFW_RELEASE)
+                keys_[key] = false;
+        }
+    }
+
+    void Engine::mouse_callback(GLFWwindow *window, double xpos, double ypos) {
+        Engine *engine = static_cast<Engine *>(glfwGetWindowUserPointer(window));
+
+        if (first_mouse_movement_) {
+            last_x = xpos;
+            last_y = ypos;
+            first_mouse_movement_ = false;
+        }
+
+        GLfloat xoffset = static_cast<GLfloat>(xpos - last_x);
+        GLfloat yoffset = static_cast<GLfloat>(last_y - ypos);
+
+        last_x = xpos;
+        last_y = ypos;
+
+        if(engine->camera_enabled_) {
+            engine->camera_.ProcessMouseMovement(xoffset, yoffset);
+        }
+
+    }
+
+
+
     void Engine::handle_input(float delta_time) {
 
         ImGuiIO &io = ImGui::GetIO();
 
         if (io.KeysDown[GLFW_KEY_ESCAPE])
             glfwSetWindowShouldClose(window_, GL_TRUE);
+
+        if (io.KeysDown[GLFW_KEY_C]) {
+            camera_enabled_ = true;
+        }
+        if (io.KeysDown[GLFW_KEY_V]) {
+            camera_enabled_ = false;
+        }
 
         // Camera controls
         if (io.KeysDown[GLFW_KEY_W])
@@ -597,96 +701,6 @@ namespace rengine {
         }
 
 
-    }
-
-    void Engine::update_camera(GLuint ubo_transforms, const glm::mat4 &model) const {
-
-        // Set up the projection matrix and feed the data to the uniform block object
-        const glm::mat4 projection = glm::perspective(camera_.Zoom,
-                                                      (GLfloat) window_width_ / (GLfloat) window_height_,
-                                                      0.1f,
-                                                      1000.0f);
-        // To the same for the view matrix
-        const glm::mat4 view = camera_.GetViewMatrix();
-
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_transforms);
-        glm::mat4 *matrices = reinterpret_cast<glm::mat4 *>(glMapBufferRange(GL_UNIFORM_BUFFER,
-                                                                             0,
-                                                                             2 * sizeof(glm::mat4),
-                                                                             GL_MAP_WRITE_BIT |
-                                                                             GL_MAP_INVALIDATE_BUFFER_BIT));
-        matrices[0] = projection * view;
-        matrices[1] = model;
-
-        glUnmapBuffer(GL_UNIFORM_BUFFER);
-
-    }
-
-
-    void Engine::update_lights(const Shader &shader) const {
-
-        shader.use();
-
-        glBindBufferBase(GL_UNIFORM_BUFFER, 1, lights_ubo_);
-
-        Light *lights = reinterpret_cast<Light *>(glMapBufferRange(GL_UNIFORM_BUFFER,
-                                                                   0,
-                                                                   nrOfLights_ * sizeof(Light),
-                                                                   GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT));
-
-        const GLfloat time = static_cast<GLfloat>(glfwGetTime()) * 0.05f;
-
-        for (unsigned int i = 0; i < nrOfLights_; i++) {
-            const float i_f = ((float) i - 7.5f) * 0.1f + 0.3f;
-            // t = 0.0f;
-            lights[i].position = glm::vec3(
-                    100.0f * std::sin(time * 1.1f + (5.0f * i_f)) * std::cos(time * 2.3f + (9.0f * i_f)),
-                    15.0f,
-                    100.0f * std::sin(time * 1.5f + (6.0f * i_f)) * std::cos(time * 1.9f + (11.0f *
-                                                                                            i_f)));
-            lights[i].color = glm::vec3(std::cos(i_f * 14.0f) * 0.5f + 0.8f,
-                                        std::sin(i_f * 17.0f) * 0.5f + 0.8f,
-                                        std::sin(i_f * 13.0f) * std::cos(i_f * 19.0f) * 0.5f + 0.8f);
-            lights[i].linear = light_linear_factor_;
-            lights[i].quadratic = light_quadratic_factor_;
-        }
-
-        glUnmapBuffer(GL_UNIFORM_BUFFER);
-
-    }
-
-    void Engine::error_callback(int error, const char *description) {
-        fputs(description, stderr);
-    }
-
-    void Engine::key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-            glfwSetWindowShouldClose(window, GL_TRUE);
-
-        if (key >= 0 && key < 1024) {
-            if (action == GLFW_PRESS)
-                keys_[key] = true;
-            else if (action == GLFW_RELEASE)
-                keys_[key] = false;
-        }
-    }
-
-    void Engine::mouse_callback(GLFWwindow *window, double xpos, double ypos) {
-        Engine *engine = static_cast<Engine *>(glfwGetWindowUserPointer(window));
-
-        if (first_mouse_movement_) {
-            last_x = xpos;
-            last_y = ypos;
-            first_mouse_movement_ = false;
-        }
-
-        GLfloat xoffset = static_cast<GLfloat>(xpos - last_x);
-        GLfloat yoffset = static_cast<GLfloat>(last_y - ypos);
-
-        last_x = xpos;
-        last_y = ypos;
-
-        engine->camera_.ProcessMouseMovement(xoffset, yoffset);
     }
 
     void Engine::update_window_title(const GLfloat t) const {

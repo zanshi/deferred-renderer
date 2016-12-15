@@ -72,6 +72,7 @@ namespace rengine {
         std::vector<Model> models_;
 
         Camera camera_;
+        bool camera_enabled_;
 
         bool setup_camera();
 
@@ -81,7 +82,7 @@ namespace rengine {
         GLfloat light_linear_factor_;
         GLfloat light_quadratic_factor_;
         GLuint lights_ubo_;
-        const unsigned int nrOfLights_ = 32;
+        const unsigned int nrOfLights_ = 64;
 
 
         static GLuint show_normals_;
