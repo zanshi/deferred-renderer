@@ -17,17 +17,19 @@ namespace rengine {
 
         glGenTextures(3, tex_);
 
-        // - Position buffer
+        // Color and normals
         glBindTexture(GL_TEXTURE_2D, tex_[0]);
         glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32UI, width_, height_);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
+        // Positions and specular
         glBindTexture(GL_TEXTURE_2D, tex_[1]);
         glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width_, height_);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
+        // Depth
         glBindTexture(GL_TEXTURE_2D, tex_[2]);
         glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, width, height);
 

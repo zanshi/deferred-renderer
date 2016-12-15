@@ -32,6 +32,8 @@ void main()
 
     vec3 color = texture(texture_diffuse1, fs_in.TexCoords).rgb;
 
+
+
     // Pack the color and normal information into the RGB32UI framebuffer texture
     outvec0.x = packHalf2x16(color.xy);
     outvec0.y = packHalf2x16(vec2(color.z, nm.x));

@@ -202,8 +202,6 @@ namespace rengine {
                 glTexStorage2D(
                         Target, static_cast<GLint>(Texture.levels()), Format.Internal,
                         Extent.x, Texture.target() == gli::TARGET_2D ? Extent.y : FaceTotal);
-//                glTexImage2D(Target,static_cast<GLint>(Texture.levels()),Format.Internal, Extent.x, Extent.y, 0, Format.External, )
-//                glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, image);
                 break;
             case gli::TARGET_2D_ARRAY:
             case gli::TARGET_3D:

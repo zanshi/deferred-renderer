@@ -14,11 +14,11 @@ struct Light {
     uint pad1;
     float Linear;
     float Quadratic;
-    uint pad2;
+    float Radius;
     uint pad3;
 };
 
-const int NR_LIGHTS = 32;
+const int NR_LIGHTS = 64;
 
 layout (std140) uniform light_block {
     Light lights[NR_LIGHTS];
@@ -55,27 +55,32 @@ void main() {
     float Specular = texture(texture_specular1, fs_in.TexCoords).r;
     vec3 Normal = normalize(nm);
 
-    // vec3 lighting  = Diffuse * 0.08; // hard-coded ambient component
-    vec3 lighting  = vec3(0.0);
+     vec3 lighting  = Diffuse * 0.08; // hard-coded ambient component
+//    vec3 lighting  = vec3(0.0);
     vec3 viewDir  = normalize(viewPos - fs_in.FragPos);
     for(int i = 0; i < NR_LIGHTS; ++i) {
-        // Diffuse
+
         vec3 L = lights[i].Position - fs_in.FragPos;
-        vec3 lightDir = normalize(L);
-        vec3 diffuse = max(dot(Normal, lightDir), 0.0) * Diffuse * lights[i].Color;
-
-        // Specular
-        vec3 halfwayDir = normalize(lightDir + viewDir);
-        float spec = pow(max(dot(Normal, halfwayDir), 0.0), 16.0);
-        vec3 specular = lights[i].Color * spec * Specular;
-
-        // Attenuation
         float distance = length(L);
-        float attenuation = 1.0 / (1.0 + lights[i].Linear * distance + lights[i].Quadratic * distance * distance);
 
-        diffuse *= attenuation;
-        specular *= attenuation;
-        lighting += diffuse + specular;
+        if(distance < lights[i].Radius) {
+
+            vec3 lightDir = normalize(L);
+
+            // Diffuse
+            vec3 diffuse = max(dot(Normal, lightDir), 0.0) * Diffuse * lights[i].Color;
+
+            // Specular
+            vec3 halfwayDir = normalize(lightDir + viewDir);
+            float spec = pow(max(dot(Normal, halfwayDir), 0.0), 16.0);
+            vec3 specular = lights[i].Color * spec * Specular;
+
+            // Attenuation
+            float attenuation = 1.0 / (1.0 + lights[i].Linear * distance + lights[i].Quadratic * distance * distance);
+
+            lighting += (diffuse + specular) * attenuation;
+
+        }
 
     }
 
