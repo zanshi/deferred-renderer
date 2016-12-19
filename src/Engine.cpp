@@ -139,20 +139,20 @@ namespace rengine {
     void Engine::run() {
 
         // Create and compile shaders common shaders
-        auto filter_shader = Shader{"../assets/shaders/gaussian_blur.vert", "../assets/shaders/gaussian_blur.frag"};
-        auto combine_bloom_shader = Shader{"../assets/shaders/bloom_combine.vert",
+        const auto filter_shader = Shader{"../assets/shaders/gaussian_blur.vert", "../assets/shaders/gaussian_blur.frag"};
+        const auto combine_bloom_shader = Shader{"../assets/shaders/bloom_combine.vert",
                                            "../assets/shaders/bloom_combine.frag"};
-        auto plain_shader = Shader{"../assets/shaders/plain.vert",
+        const auto plain_shader = Shader{"../assets/shaders/plain.vert",
                                    "../assets/shaders/plain.frag"};
 
-        auto forward_shader = Shader{"../assets/shaders/forward.vert",
+        const auto forward_shader = Shader{"../assets/shaders/forward.vert",
                                      "../assets/shaders/forward.frag"};
 
         // ------------------------------------------------------------------------------------
         // Set up deferred stuff
-        auto deferred_geometry_shader = Shader{"../assets/shaders/deferred_geometry.vert",
+        const auto deferred_geometry_shader = Shader{"../assets/shaders/deferred_geometry.vert",
                                                "../assets/shaders/deferred_geometry.frag"};
-        auto deferred_lighting_shader = Shader{"../assets/shaders/deferred_hdr_lighting.vert",
+        const auto deferred_lighting_shader = Shader{"../assets/shaders/deferred_hdr_lighting.vert",
                                                "../assets/shaders/deferred_hdr_lighting.frag"};
 
 //        // Set up the transform block uniform block object
@@ -207,7 +207,7 @@ namespace rengine {
                                                             FBO{filter_buffer_width, filter_buffer_height}}};
 
 //        // Create quad for rendering the final image
-        auto quad = Quad{};
+        const auto quad = Quad{};
 
         // ------------------------------------------------------------------------------------
 
@@ -239,11 +239,12 @@ namespace rengine {
             {
                 handle_input(delta_time);
 
-                ImGui::Text("Settings");
+                const auto str = should_render_deferred_? "Using deferred shading" : "Using forward shading";
+                ImGui::Text(str);
                 ImGui::SliderFloat("Linear light factor", &light_linear_factor_, 0.0f, 2.0f);
 //                ImGui::SliderFloat("Quadratic light factor", &light_quadratic_factor_, 0.0f, 1.0f);
-                ImGui::SliderFloat("Quadratic light factor", &light_quadratic_factor_, 0.0f, 0.4f);
-                if (ImGui::Button("Render deferred")) should_render_deferred_ ^= 1;
+                ImGui::SliderFloat("Quadratic light factor", &light_quadratic_factor_, 0.0f, 0.1f);
+                if (ImGui::Button("Toggle render deferred")) should_render_deferred_ ^= 1;
             }
 
 
@@ -311,7 +312,7 @@ namespace rengine {
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
 
-        glm::mat4 model;
+        const glm::mat4 model;
 
         // CAMERA
         update_camera(forward_ubo_transforms, model);
@@ -405,7 +406,7 @@ namespace rengine {
 
 
         // Draw the loaded model
-        glm::mat4 model;
+        const glm::mat4 model;
 //        model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
 //        model = glm::scale(model, glm::vec3(0.25f));    // It's a bit too big for our scene, so scale it down
 //        model = glm::rotate(model, 45.0f, glm::vec3{0.0f, 1.0f, 0.0f});
@@ -524,7 +525,7 @@ namespace rengine {
     }
 
     void Engine::render_scene() const {
-        for (auto &&model : models_) {
+        for (const auto &model : models_) {
             model.draw();
         }
     }

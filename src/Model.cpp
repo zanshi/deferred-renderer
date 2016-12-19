@@ -16,7 +16,7 @@
 namespace rengine {
 
     void Model::draw() const {
-        for (auto &&mesh : meshes_) {
+        for (const auto &mesh : meshes_) {
             mesh.draw();
         }
     }
@@ -163,7 +163,7 @@ namespace rengine {
 
     /// Filename can be KTX or DDS files
     GLuint Model::create_texture(char const *Filename) {
-        std::string path = this->directory_ + std::string(Filename);
+        const std::string path = this->directory_ + std::string(Filename);
 
         std::cout << path << std::endl;
 
