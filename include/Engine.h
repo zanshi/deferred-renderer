@@ -89,6 +89,9 @@ namespace rengine {
         static bool should_render_deferred_;
 
 
+        Quad quad_;
+
+
         bool compile_shaders();
 
         void render_forward(const Shader &forward_shader,
@@ -96,28 +99,17 @@ namespace rengine {
                             const FBO &render_fbo) const;
 
 
-        void render_deferred(const Shader &geometry_shader,
-                             const Shader &lighting_shader,
-                             const GLuint ubo_transforms,
-                             const FBO &render_fbo,
-                             const Quad &quad,
-                             const GBuffer &gbuffer) const;
+        void render_deferred(const Shader &geometry_shader, const Shader &lighting_shader, const GLuint ubo_transforms,
+                                     const FBO &render_fbo, const GBuffer &gbuffer) const;
 
-        void deferred_lighting_pass(const Shader &lighting_shader,
-                                    const GBuffer &gbuffer,
-                                    const FBO &render_fbo,
-                                    const Quad &quad) const;
+        void deferred_lighting_pass(const Shader &lighting_shader, const GBuffer &gbuffer, const FBO &render_fbo) const;
 
         void deferred_geometry_pass(const Shader &g_geometry_shader,
                                     const GBuffer &gbuffer,
                                     const GLuint ubo_transforms) const;
 
-        void bloom_pass(const FBO &render_fbo,
-                        const std::array<FBO, 2> &filter_fbos,
-                        const Shader &shader_filter,
-                        const Shader &shader_combine,
-                        const Shader &shader_plain,
-                        const Quad &quad) const;
+        void bloom_pass(const FBO &render_fbo, const std::array<FBO, 2> &filter_fbos, const Shader &shader_filter,
+                                const Shader &shader_combine) const;
 
         void handle_input(float delta_time);
 

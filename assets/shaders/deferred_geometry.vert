@@ -15,15 +15,12 @@ out VS_OUT
 } vs_out;
 
 
-layout(std140) uniform TransformBlock
+layout(std140, binding = 0) uniform transform_block
 {
-//    mat4 projection;
-//    mat4 view;
     mat4 projView;
     mat4 model;
 } transform;
 
-//uniform mat4 model;
 
 void main()
 {

@@ -4,7 +4,7 @@
 int main(void)
 {
 
-    rengine::Engine engine(1680, 1050);
+    rengine::Engine engine(800, 600);
 
     engine.start_up();
 
