@@ -65,7 +65,6 @@ namespace rengine {
 
         if (!glfwInit())
             return false;
-//        exit(EXIT_FAILURE);
 
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -77,16 +76,13 @@ namespace rengine {
         if (!window_) {
             glfwTerminate();
             return false;
-//        exit(EXIT_FAILURE);
         }
 
         glfwMakeContextCurrent(window_);
 
         glfwSetWindowUserPointer(window_, this);
-
         glfwSetKeyCallback(window_, key_callback);
         glfwSetCursorPosCallback(window_, mouse_callback);
-
         glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
         glewExperimental = GL_TRUE;
@@ -115,7 +111,6 @@ namespace rengine {
 
     bool Engine::load_scene() {
 
-//        models_.push_back(Model{"../assets/models/nano/nanosuit.obj"});
         models_.push_back(Model{"../assets/models/sponza2/sponza.dae"});
 
         return true;
@@ -139,21 +134,20 @@ namespace rengine {
     void Engine::run() {
 
         // Create and compile shaders common shaders
-        const auto filter_shader = Shader{"../assets/shaders/gaussian_blur.vert", "../assets/shaders/gaussian_blur.frag"};
+        const auto filter_shader = Shader{"../assets/shaders/gaussian_blur.vert",
+                                          "../assets/shaders/gaussian_blur.frag"};
         const auto combine_bloom_shader = Shader{"../assets/shaders/bloom_combine.vert",
-                                           "../assets/shaders/bloom_combine.frag"};
-        const auto plain_shader = Shader{"../assets/shaders/plain.vert",
-                                   "../assets/shaders/plain.frag"};
+                                                 "../assets/shaders/bloom_combine.frag"};
 
         const auto forward_shader = Shader{"../assets/shaders/forward.vert",
-                                     "../assets/shaders/forward.frag"};
+                                           "../assets/shaders/forward.frag"};
 
         // ------------------------------------------------------------------------------------
         // Set up deferred stuff
         const auto deferred_geometry_shader = Shader{"../assets/shaders/deferred_geometry.vert",
-                                               "../assets/shaders/deferred_geometry.frag"};
+                                                     "../assets/shaders/deferred_geometry.frag"};
         const auto deferred_lighting_shader = Shader{"../assets/shaders/deferred_hdr_lighting.vert",
-                                               "../assets/shaders/deferred_hdr_lighting.frag"};
+                                                     "../assets/shaders/deferred_hdr_lighting.frag"};
 
 //        // Set up the transform block uniform block object
         deferred_geometry_shader.use();
@@ -161,11 +155,11 @@ namespace rengine {
         // ------------------------------------------------------------------------------------
         // Set up the uniform transform block for each shader
         // should probably do this in the shader manager somehow
-        GLuint deferred_transform_ubo = glGetUniformBlockIndex(deferred_geometry_shader.program_, "TransformBlock");
-        glUniformBlockBinding(deferred_geometry_shader.program_, deferred_transform_ubo, 0);
+//        GLuint deferred_transform_ubo = glGetUniformBlockIndex(deferred_geometry_shader.program_, "TransformBlock");
+//        glUniformBlockBinding(deferred_geometry_shader.program_, deferred_transform_ubo, 0);
 
-        GLuint forward_transform_ubo = glGetUniformBlockIndex(forward_shader.program_, "TransformBlock");
-        glUniformBlockBinding(forward_shader.program_, forward_transform_ubo, 0);
+//        GLuint forward_transform_ubo = glGetUniformBlockIndex(forward_shader.program_, "TransformBlock");
+//        glUniformBlockBinding(forward_shader.program_, forward_transform_ubo, 0);
 
         GLuint ubo_transforms;
         glGenBuffers(1, &ubo_transforms);
@@ -178,11 +172,11 @@ namespace rengine {
         // ------------------------------------------------------------------------------------
         // Set up lights
 
-        GLuint deferred_lights_idx = glGetUniformBlockIndex(deferred_lighting_shader.program_, "light_block");
-        glUniformBlockBinding(deferred_lighting_shader.program_, deferred_lights_idx, 1);
+//        GLuint deferred_lights_idx = glGetUniformBlockIndex(deferred_lighting_shader.program_, "light_block");
+//        glUniformBlockBinding(deferred_lighting_shader.program_, deferred_lights_idx, 1);
 
-        GLuint forward_lights_idx = glGetUniformBlockIndex(forward_shader.program_, "light_block");
-        glUniformBlockBinding(forward_shader.program_, forward_lights_idx, 1);
+//        GLuint forward_lights_idx = glGetUniformBlockIndex(forward_shader.program_, "light_block");
+//        glUniformBlockBinding(forward_shader.program_, forward_lights_idx, 1);
 
         glGenBuffers(1, &lights_ubo_);
 
@@ -196,7 +190,6 @@ namespace rengine {
 
         // ------------------------------------------------------------------------------------
         // Set up framebuffers
-
         const auto gbuffer = GBuffer{window_width_, window_height_};
         const auto render_fbo = FBO{window_width_, window_height_, 2, true};
 
@@ -206,11 +199,11 @@ namespace rengine {
         const auto filter_fbos = std::array<FBO, 2>{{FBO{filter_buffer_height, filter_buffer_width},
                                                             FBO{filter_buffer_width, filter_buffer_height}}};
 
-//        // Create quad for rendering the final image
-        const auto quad = Quad{};
+        // Create quad for rendering the final image
+        quad_.init();
+
 
         // ------------------------------------------------------------------------------------
-
         GLfloat current_frame_time = 0.0f;
         GLfloat delta_time = 0.0f;
         GLfloat last_frame_time = 0.0f;
@@ -229,20 +222,17 @@ namespace rengine {
             update_window_title(current_frame_time);
 
             // ------------------------------------------------------
-
             // INPUT
             glfwPollEvents();
-
 
             ImGui_ImplGlfwGL3_NewFrame();
 
             {
                 handle_input(delta_time);
 
-                const auto str = should_render_deferred_? "Using deferred shading" : "Using forward shading";
+                auto str = should_render_deferred_ ? "Using deferred shading" : "Using forward shading";
                 ImGui::Text(str);
                 ImGui::SliderFloat("Linear light factor", &light_linear_factor_, 0.0f, 2.0f);
-//                ImGui::SliderFloat("Quadratic light factor", &light_quadratic_factor_, 0.0f, 1.0f);
                 ImGui::SliderFloat("Quadratic light factor", &light_quadratic_factor_, 0.0f, 0.1f);
                 if (ImGui::Button("Toggle render deferred")) should_render_deferred_ ^= 1;
             }
@@ -253,16 +243,14 @@ namespace rengine {
 
             // ------------------------------------------------------
             // RENDERING
-
-
             if (should_render_deferred_) {
-                render_deferred(deferred_geometry_shader, deferred_lighting_shader, ubo_transforms, render_fbo, quad,
+                render_deferred(deferred_geometry_shader, deferred_lighting_shader, ubo_transforms, render_fbo,
                                 gbuffer);
             } else {
                 render_forward(forward_shader, ubo_transforms, render_fbo);
             }
 
-            bloom_pass(render_fbo, filter_fbos, filter_shader, combine_bloom_shader, plain_shader, quad);
+            bloom_pass(render_fbo, filter_fbos, filter_shader, combine_bloom_shader);
 
             ImGui::Render();
 
@@ -276,12 +264,12 @@ namespace rengine {
 
     void
     Engine::render_deferred(const Shader &geometry_shader, const Shader &lighting_shader, const GLuint ubo_transforms,
-                            const FBO &render_fbo, const Quad &quad, const GBuffer &gbuffer) const {
+                            const FBO &render_fbo, const GBuffer &gbuffer) const {
 
         // Geometry pass
         deferred_geometry_pass(geometry_shader, gbuffer, ubo_transforms);
         // Lighting pass
-        deferred_lighting_pass(lighting_shader, gbuffer, render_fbo, quad);
+        deferred_lighting_pass(lighting_shader, gbuffer, render_fbo);
 
     }
 
@@ -293,8 +281,8 @@ namespace rengine {
         render_fbo.bind();
 
         // Clear the FBO so that we have a clean frame
-        static const GLfloat black[] = {0.0f, 0.0f, 0.0f, 1.0f};
-        static const GLfloat float_ones = 1.0f;
+        const GLfloat black[] = {0.0f, 0.0f, 0.0f, 1.0f};
+        const GLfloat float_ones = 1.0f;
         glClearBufferfv(GL_COLOR, 0, black);
         glClearBufferfv(GL_COLOR, 1, black);
         glClearBufferfv(GL_DEPTH, 0, &float_ones);
@@ -302,9 +290,6 @@ namespace rengine {
         forward_shader.use();
 
         glUniform1ui(glGetUniformLocation(forward_shader.program_, "showNormals"), show_normals_);
-
-        // Lights
-        // -------------------------------------------------------------------------------------------
         glUniform3fv(glGetUniformLocation(forward_shader.program_, "viewPos"), 1, glm::value_ptr(camera_.Position));
 
         glEnable(GL_DEPTH_TEST);
@@ -333,54 +318,6 @@ namespace rengine {
         light_linear_factor_ = 0.14f;
         light_quadratic_factor_ = 0.07f;
 
-//        const GLfloat time = static_cast<GLfloat>(glfwGetTime()) * 0.05f;
-//
-//        for (unsigned int i = 0; i < nrOfLights_; i++) {
-//            const float i_f = ((float) i - 7.5f) * 0.1f + 0.3f;
-//            // t = 0.0f;
-//            lights_gl_[i].position = glm::vec3(
-//                    100.0f * std::sin(time * 1.1f + (5.0f * i_f)) * std::cos(time * 2.3f + (9.0f * i_f)),
-//                    15.0f,
-//                    100.0f * std::sin(time * 1.5f + (6.0f * i_f)) * std::cos(time * 1.9f + (11.0f *
-//                                                                                            i_f)));
-//            lights_gl_[i].color = glm::vec3(std::cos(i_f * 14.0f) * 0.5f + 0.8f,
-//                                        std::sin(i_f * 17.0f) * 0.5f + 0.8f,
-//                                        std::sin(i_f * 13.0f) * std::cos(i_f * 19.0f) * 0.5f + 0.8f);
-//            lights_gl_[i].linear = light_linear_factor_;
-//            lights_gl_[i].quadratic = light_quadratic_factor_;
-//        }
-
-
-//        const GLuint NR_LIGHTS = 32;
-//
-//        std::random_device rd;
-//        std::mt19937 gen(rd());
-//        std::uniform_real_distribution<> dis(0, 1);
-//
-//        light_linear_factor_ = 0.045f;
-//        light_quadratic_factor_ = 0.0075f;
-//
-//        for (GLuint i = 0; i < NR_LIGHTS; i++) {
-//
-//            // Calculate slightly random offsets
-//            GLfloat xPos = 0.0;
-//            GLfloat yPos = 0.1f * i * 6.0f - 3.0f;
-//            GLfloat zPos = 0.1f * i * 6.0f - 3.0f;
-//            glm::vec3 pos = {xPos, yPos, zPos};
-//
-//            pos *= 10.0f;
-//
-//            // Also calculate random color
-//            GLfloat rColor = static_cast<GLfloat>(dis(gen) / 2.0f + 0.5f); // Between 0.5 and 1.0
-//            GLfloat gColor = static_cast<GLfloat>(dis(gen) / 2.0f + 0.5f); // Between 0.5 and 1.0
-//            GLfloat bColor = static_cast<GLfloat>(dis(gen) / 2.0f + 0.5f); // Between 0.5 and 1.0
-//
-//            Light light;
-//            light.position = pos;
-//            light.color = glm::vec3(rColor, gColor, bColor);
-//
-//            lights_.push_back(light);
-//        }
     }
 
 
@@ -425,34 +362,27 @@ namespace rengine {
     }
 
 
-    void Engine::deferred_lighting_pass(const Shader &lighting_shader, const GBuffer &gbuffer, const FBO &render_fbo,
-                                        const Quad &quad) const {
+    void
+    Engine::deferred_lighting_pass(const Shader &lighting_shader, const GBuffer &gbuffer, const FBO &render_fbo) const {
 
 
         render_fbo.bind();
 
-        static const GLfloat black[] = {0.0f, 0.0f, 0.0f, 1.0f};
-        static const GLfloat float_ones = 1.0f;
+        const GLfloat black[] = {0.0f, 0.0f, 0.0f, 1.0f};
+        const GLfloat float_ones = 1.0f;
         glClearBufferfv(GL_COLOR, 0, black);
         glClearBufferfv(GL_COLOR, 1, black);
         glClearBufferfv(GL_DEPTH, 0, &float_ones);
 
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         lighting_shader.use();
         gbuffer.bind_for_lighting_pass();
 
-
         glUniform1ui(glGetUniformLocation(lighting_shader.program_, "showNormals"), show_normals_);
-
-
-        // Lights
-        // -------------------------------------------------------------------------------------------
-
-
         glUniform3fv(glGetUniformLocation(lighting_shader.program_, "viewPos"), 1, glm::value_ptr(camera_.Position));
 
-        quad.draw();
+        quad_.draw();
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -462,7 +392,7 @@ namespace rengine {
     }
 
     void Engine::bloom_pass(const FBO &render_fbo, const std::array<FBO, 2> &filter_fbos, const Shader &shader_filter,
-                            const Shader &shader_combine, const Shader &shader_plain, const Quad &quad) const {
+                            const Shader &shader_combine) const {
 
 
         //-----------------------------------------------
@@ -470,7 +400,7 @@ namespace rengine {
         shader_filter.use();
         glUniform1i(glGetUniformLocation(shader_filter.program_, "hdr_image"), 0);
 
-        glBindVertexArray(quad.vao_); // Bind the quad's VAO
+        glBindVertexArray(quad_.vao_); // Bind the quad's VAO
 
         filter_fbos[0].bind(); // Use the first filter FBO
 
@@ -495,10 +425,10 @@ namespace rengine {
 
         //-----------------------------------------------
         // Combine
-
         shader_combine.use();
-        glUniform1i(glGetUniformLocation(shader_combine.program_, "hdr_image"), 0);
-        glUniform1i(glGetUniformLocation(shader_combine.program_, "bloom_image"), 1);
+//        glUniform1i(glGetUniformLocation(shader_combine.program_, "hdr_image"), 0);
+//        glUniform1i(glGetUniformLocation(shader_combine.program_, "bloom_image"), 1);
+
 
         // Render to default frame buffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -542,11 +472,11 @@ namespace rengine {
         const glm::mat4 view = camera_.GetViewMatrix();
 
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_transforms);
-        glm::mat4 *matrices = reinterpret_cast<glm::mat4 *>(glMapBufferRange(GL_UNIFORM_BUFFER,
-                                                                             0,
-                                                                             2 * sizeof(glm::mat4),
-                                                                             GL_MAP_WRITE_BIT |
-                                                                             GL_MAP_INVALIDATE_BUFFER_BIT));
+        glm::mat4 *const matrices = reinterpret_cast<glm::mat4 *>(glMapBufferRange(GL_UNIFORM_BUFFER,
+                                                                                   0,
+                                                                                   2 * sizeof(glm::mat4),
+                                                                                   GL_MAP_WRITE_BIT |
+                                                                                   GL_MAP_INVALIDATE_BUFFER_BIT));
         matrices[0] = projection * view;
         matrices[1] = model;
 
@@ -561,13 +491,14 @@ namespace rengine {
 
         glBindBufferBase(GL_UNIFORM_BUFFER, 1, lights_ubo_);
 
-        Light *lights = reinterpret_cast<Light *>(glMapBufferRange(GL_UNIFORM_BUFFER,
-                                                                   0,
-                                                                   nrOfLights_ * sizeof(Light),
-                                                                   GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT));
+        Light *const lights = reinterpret_cast<Light *>(glMapBufferRange(GL_UNIFORM_BUFFER,
+                                                                         0,
+                                                                         nrOfLights_ * sizeof(Light),
+                                                                         GL_MAP_WRITE_BIT |
+                                                                         GL_MAP_INVALIDATE_BUFFER_BIT));
 
         const GLfloat time = static_cast<GLfloat>(glfwGetTime()) * 0.05f;
-        constexpr GLfloat threshold = std::pow(2.0f, 16) / 30.0f;
+        const GLfloat threshold = std::pow(2.0f, 16.0f) / 30.0f;
 
         for (unsigned int i = 0; i < nrOfLights_; i++) {
             const float i_f = ((float) i - 7.5f) * 0.1f + 0.3f;
@@ -588,8 +519,8 @@ namespace rengine {
             const GLfloat max_brightness = std::fmax(std::fmax(color.r, color.g), color.b);
             lights[i].radius = (-light_linear_factor_ +
                                 std::sqrt(light_linear_factor_ * light_linear_factor_ -
-                                                             4 * light_quadratic_factor_ *
-                                                             (1.0f - threshold * max_brightness))) /
+                                          4 * light_quadratic_factor_ *
+                                          (1.0f - threshold * max_brightness))) /
                                (2 * light_quadratic_factor_);
 
 //            lights[i].radius = 25.0f;
@@ -631,12 +562,11 @@ namespace rengine {
         last_x = xpos;
         last_y = ypos;
 
-        if(engine->camera_enabled_) {
+        if (engine->camera_enabled_) {
             engine->camera_.ProcessMouseMovement(xoffset, yoffset);
         }
 
     }
-
 
 
     void Engine::handle_input(float delta_time) {
