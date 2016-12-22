@@ -1,7 +1,7 @@
 #version 430 core
 
-uniform sampler2D hdr_image;
-uniform sampler2D bloom_image;
+layout (binding = 0) uniform sampler2D hdr_image;
+layout (binding = 1) uniform sampler2D bloom_image;
 
 uniform float exposure = 0.9;
 uniform float bloom_factor = 1.0;

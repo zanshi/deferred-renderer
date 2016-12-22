@@ -20,7 +20,7 @@ struct Light {
 
 const int NR_LIGHTS = 64;
 
-layout (std140) uniform light_block {
+layout (std140, binding = 1) uniform light_block {
     Light lights[NR_LIGHTS];
 };
 
