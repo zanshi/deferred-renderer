@@ -149,18 +149,10 @@ namespace rengine {
         const auto deferred_lighting_shader = Shader{"../assets/shaders/deferred_hdr_lighting.vert",
                                                      "../assets/shaders/deferred_hdr_lighting.frag"};
 
-//        // Set up the transform block uniform block object
         deferred_geometry_shader.use();
 
         // ------------------------------------------------------------------------------------
-        // Set up the uniform transform block for each shader
-        // should probably do this in the shader manager somehow
-//        GLuint deferred_transform_ubo = glGetUniformBlockIndex(deferred_geometry_shader.program_, "TransformBlock");
-//        glUniformBlockBinding(deferred_geometry_shader.program_, deferred_transform_ubo, 0);
-
-//        GLuint forward_transform_ubo = glGetUniformBlockIndex(forward_shader.program_, "TransformBlock");
-//        glUniformBlockBinding(forward_shader.program_, forward_transform_ubo, 0);
-
+        // Set up the uniform transform block
         GLuint ubo_transforms;
         glGenBuffers(1, &ubo_transforms);
 
@@ -171,13 +163,6 @@ namespace rengine {
 
         // ------------------------------------------------------------------------------------
         // Set up lights
-
-//        GLuint deferred_lights_idx = glGetUniformBlockIndex(deferred_lighting_shader.program_, "light_block");
-//        glUniformBlockBinding(deferred_lighting_shader.program_, deferred_lights_idx, 1);
-
-//        GLuint forward_lights_idx = glGetUniformBlockIndex(forward_shader.program_, "light_block");
-//        glUniformBlockBinding(forward_shader.program_, forward_lights_idx, 1);
-
         glGenBuffers(1, &lights_ubo_);
 
         glBindBuffer(GL_UNIFORM_BUFFER, lights_ubo_);
@@ -426,9 +411,6 @@ namespace rengine {
         //-----------------------------------------------
         // Combine
         shader_combine.use();
-//        glUniform1i(glGetUniformLocation(shader_combine.program_, "hdr_image"), 0);
-//        glUniform1i(glGetUniformLocation(shader_combine.program_, "bloom_image"), 1);
-
 
         // Render to default frame buffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);

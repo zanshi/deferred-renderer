@@ -1,17 +1,30 @@
 
 #include "Engine.h"
 
-int main(void)
+const int default_width = 1280;
+const int default_height = 800;
+
+int main(int argc, char* argv[] )
 {
 
-    rengine::Engine engine(800, 600);
+	int width = default_width;
+	int height = default_height;
 
-    engine.start_up();
+	if (argc > 2 ) {
+		width = std::stoi(argv[1]);
+		height = std::stoi(argv[2]);
+	}
 
-    engine.run();
 
-    engine.shut_down();
 
-    return 0;
+	rengine::Engine engine(width, height);
+
+	engine.start_up();
+
+	engine.run();
+
+	engine.shut_down();
+
+	return 0;
 
 }
