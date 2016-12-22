@@ -111,7 +111,7 @@ namespace rengine {
 
     bool Engine::load_scene() {
 
-        models_.push_back(Model{"../assets/models/sponza2/sponza.dae"});
+        models_.push_back(Model{"../assets/models/sponza.dae"});
 
         return true;
 
