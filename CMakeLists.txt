@@ -34,7 +34,7 @@ endif(NOT APPLE AND NOT UNIX)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/modules)
 
 # Find external packages
-find_package(PkgConfig REQUIRED)
+#find_package(PkgConfig REQUIRED)
 find_package(OpenGL REQUIRED)
 #find_package(GLEW REQUIRED)
 #find_package(glfw 3.2 REQUIRED)
