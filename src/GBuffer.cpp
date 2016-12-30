@@ -14,7 +14,6 @@ namespace rengine {
         glGenFramebuffers(1, &g_buffer_);
         glBindFramebuffer(GL_FRAMEBUFFER, g_buffer_);
 
-
         glGenTextures(3, tex_);
 
         // Color and normals
@@ -33,14 +32,12 @@ namespace rengine {
         glBindTexture(GL_TEXTURE_2D, tex_[2]);
         glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, width, height);
 
-
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex_[0], 0);
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, tex_[1], 0);
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tex_[2], 0);
 
         static const GLuint attachments[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
         glDrawBuffers(2, attachments);
-
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
             std::cout << "Gbuffer not complete!" << std::endl;

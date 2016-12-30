@@ -1,5 +1,5 @@
 //
-// Created by Niclas Olmenius
+// Created by Niclas Olmenius, mostly from LearnOpenGL
 //
 
 

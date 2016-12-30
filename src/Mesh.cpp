@@ -64,10 +64,8 @@ namespace rengine {
         }
 
         // Draw mesh
-        // TODO Use packet buffers in the future
         glBindVertexArray(VAO_);
         glDrawElements(GL_TRIANGLES, indices_size_, GL_UNSIGNED_INT, 0);
-
 
         // Always good practice to set everything back to defaults once configured.
         for (GLuint i = 0; i < textures_.size(); i++) {
