@@ -1,5 +1,5 @@
 //
-// Created by Niclas Olmenius on 2016-10-27.
+// Created by Niclas Olmenius
 //
 
 #pragma once

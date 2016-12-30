@@ -1,5 +1,5 @@
 //
-// Created by Niclas Olmenius on 2016-11-03.
+// Created by Niclas Olmenius
 //
 
 

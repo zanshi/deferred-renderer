@@ -1,12 +1,10 @@
 //
-// Created by Niclas Olmenius on 2016-11-02.
+// Created by Niclas Olmenius
 //
-
 
 #pragma once
 
 #include <GL/glew.h>
-#define nrOfTextureIds = 3;
 
 namespace rengine {
 
@@ -14,14 +12,7 @@ class GBuffer {
 
 public:
 
-    enum GBUFFER_TEXTURE_TYPE {
-        GBUFFER_TEXTURE_TYPE_POSITION,
-        GBUFFER_TEXTURE_TYPE_NORMAL,
-        GBUFFER_TEXTURE_TYPE_ALBEDO,
-        GBUFFER_NUM_TEXTURES
-    };
-
-    explicit GBuffer(int width, int height);
+    GBuffer(int width, int height);
     ~GBuffer();
 
     void bind_for_geometry_pass() const;

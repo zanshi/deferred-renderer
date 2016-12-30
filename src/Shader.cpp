@@ -1,8 +1,3 @@
-//
-// Created by Niclas Olmenius, mostly from LearnOpenGL
-//
-
-
 #include "Shader.h"
 
 namespace rengine {

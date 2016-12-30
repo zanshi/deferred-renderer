@@ -7,17 +7,16 @@
 
 namespace rengine {
 
-
     FBO::FBO(int width, int height, GLuint nr_textures, bool gen_depth_buffer) : width_{width}, height_{height} {
 
         glGenFramebuffers(1, &fbo_);
         glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
 
         textures_.reserve(nr_textures);
-
         glGenTextures(nr_textures, textures_.data());
         std::vector<GLenum> attachments;
 
+        // Create frame buffer textures
         for (GLuint i = 0; i < nr_textures; i++) {
             glBindTexture(GL_TEXTURE_2D, textures_[i]);
             glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB16F, width_, height_);
@@ -40,6 +39,7 @@ namespace rengine {
 
         glDrawBuffers(nr_textures, attachments.data());
 
+        // Check for completeness
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             std::cout << "Framebuffer not complete!" << std::endl;
         glBindFramebuffer(GL_FRAMEBUFFER, 0);

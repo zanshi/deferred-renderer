@@ -106,6 +106,7 @@ namespace rengine {
 
 
     bool Engine::setup_camera() {
+        // Position the camera at a good location for testing
         camera_ = Camera{glm::vec3(-120.0f, 20.0f, 0.0f)};
         first_mouse_movement_ = true;
         camera_enabled_ = false;
@@ -154,28 +155,20 @@ namespace rengine {
 
         setup_lights();
 
-
-
         // ------------------------------------------------------------------------------------
-        // Set up framebuffers
+        // Set up frame buffers
         const auto gbuffer = GBuffer{window_width_, window_height_};
         const auto render_fbo = FBO{window_width_, window_height_, 2, true};
-
-        const int filter_buffer_width = window_width_;
-        const int filter_buffer_height = window_height_;
-
-        const auto filter_fbos = std::array<FBO, 2>{{FBO{filter_buffer_height, filter_buffer_width},
-                                                            FBO{filter_buffer_width, filter_buffer_height}}};
+        const auto filter_fbos = std::array<FBO, 2>{{FBO{window_height_, window_width_},
+                                                            FBO{window_width_, window_height_}}};
 
         // Create quad for rendering the final image
         quad_.init();
-
 
         // ------------------------------------------------------------------------------------
         GLfloat current_frame_time = 0.0f;
         GLfloat delta_time = 0.0f;
         GLfloat last_frame_time = 0.0f;
-
 
         while (!glfwWindowShouldClose(window_)) {
 
@@ -210,8 +203,10 @@ namespace rengine {
             // ------------------------------------------------------
             // RENDERING
             if (should_render_deferred_) {
+                // Deferred
                 render_deferred(deferred_geometry_shader, deferred_lighting_shader, render_fbo, gbuffer);
             } else {
+                // Forward
                 render_forward(forward_shader, render_fbo);
             }
 

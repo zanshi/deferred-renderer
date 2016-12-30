@@ -7,6 +7,7 @@ layout(binding = 0) uniform sampler2D texture_diffuse1;
 layout(binding = 1) uniform sampler2D texture_specular1;
 layout(binding = 2) uniform sampler2D texture_normal1;
 
+// The struct is padded to be able to use the std140 layout
 struct Light {
     vec3 Position;
     uint pad0;
@@ -20,6 +21,7 @@ struct Light {
 
 const int NR_LIGHTS = 32;
 
+// Lights
 layout (std140, binding = 1) uniform light_block {
     Light lights[NR_LIGHTS];
 };
@@ -60,6 +62,7 @@ void main() {
         vec3 L = lights[i].Position - fs_in.FragPos;
         float distance = length(L);
 
+        // Only calculate if within radius
         if(distance < lights[i].Radius) {
 
             vec3 lightDir = normalize(L);
@@ -81,6 +84,7 @@ void main() {
 
     }
 
+    // Final color
     FragColor = vec4(mix(lighting, Normal, showNormals),1.0);
 
     // ------------------------

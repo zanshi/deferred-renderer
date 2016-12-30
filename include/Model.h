@@ -1,7 +1,6 @@
 //
-// Created by Niclas Olmenius on 2016-10-27.
+// Created by Niclas Olmenius, mostly from LearnOpenGL
 //
-
 
 #pragma once
 
@@ -16,7 +15,6 @@ namespace rengine {
 
     class Model {
     public:
-        /*  Functions   */
         Model(std::string path)
         {
             this->load_model(path);
@@ -25,13 +23,11 @@ namespace rengine {
         void draw() const;
 
     private:
-        /*  Model Data  */
         std::vector<Mesh> meshes_;
         std::string directory_;
         std::vector<Texture> textures_loaded_;	// Stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
 
 
-        /*  Functions   */
         void load_model(std::string path);
 
         void process_node(aiNode* node, const aiScene* scene);

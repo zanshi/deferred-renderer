@@ -6,6 +6,8 @@ layout(location = 1) out vec4 BrightColor;
 layout(binding = 0) uniform usampler2D gbuffer_tex0;
 layout(binding = 1) uniform sampler2D gbuffer_tex1;
 
+
+// The struct is padded to be able to use the std140 layout
 struct Light {
     vec3 Position;
     uint pad0;
@@ -62,13 +64,16 @@ void main()
     vec3 lighting  = fragment.color * 0.08; // hard-coded ambient component
     vec3 viewDir  = normalize(viewPos - fragment.ws_coord);
     for(int i = 0; i < NR_LIGHTS; ++i) {
-        // Diffuse
+
         vec3 L = lights[i].Position - fragment.ws_coord;
         float distance = length(L);
 
+        // Only calculate if within radius
         if(distance < lights[i].Radius) {
 
             vec3 lightDir = normalize(L);
+
+            // Diffuse
             vec3 diffuse = max(dot(fragment.normal, lightDir), 0.0) * fragment.color * lights[i].Color;
 
             // Specular
@@ -83,8 +88,8 @@ void main()
         }
     }
 
+    // Final color
     FragColor = vec4(mix(lighting, fragment.normal, showNormals),1.0);
-
 
     // ------------------------
     /// HDR and bloom

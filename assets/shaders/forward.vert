@@ -14,7 +14,7 @@ out VS_OUT
     vec3 BiTangent;
 } vs_out;
 
-
+// Transforms
 layout(std140, binding = 0) uniform transform_block
 {
     mat4 projView;
@@ -30,13 +30,7 @@ void main()
     gl_Position = transform.projView * worldPos;
     vs_out.TexCoords = texCoords;
 
-//    mat3 normalMatrix = transpose(inverse(mat3(model)));
-
     mat3 mat3Model = mat3(transform.model);
-
-//    vs_out.Normal = normalMatrix * normal;
-//    vs_out.Tangent = normalMatrix * tangent;
-//    vs_out.BiTangent = normalMatrix * bitangent;
     vs_out.Normal = mat3Model * normal;
     vs_out.Tangent = tangent;
     vs_out.BiTangent = bitangent;

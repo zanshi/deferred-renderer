@@ -1,7 +1,3 @@
-//
-// Created by Niclas Olmenius on 2016-10-27.
-//
-
 
 #pragma once
 
@@ -19,7 +15,6 @@ namespace rengine {
         void draw() const;
 
     private:
-        /*  Render data  */
         std::vector<Texture> textures_;
         GLuint VAO_, VBO_, EBO_;
         GLuint indices_size_;

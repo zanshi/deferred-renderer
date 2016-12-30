@@ -1,5 +1,5 @@
 //
-// Created by Niclas Olmenius on 2016-11-02.
+// Created by Niclas Olmenius
 //
 
 #pragma once
@@ -10,6 +10,7 @@
 namespace rengine {
 
 #pragma pack (push, 1)
+    // The struct is padded to be able to use the std140 layout
     struct Light {
         glm::vec3 position;
         unsigned int        : 32;       // pad0

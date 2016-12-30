@@ -16,7 +16,7 @@ namespace rengine {
 
         glGenTextures(3, tex_);
 
-        // Color and normals
+        // Color and normal
         glBindTexture(GL_TEXTURE_2D, tex_[0]);
         glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32UI, width_, height_);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -39,6 +39,7 @@ namespace rengine {
         static const GLuint attachments[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
         glDrawBuffers(2, attachments);
 
+        // Check for completeness
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
             std::cout << "Gbuffer not complete!" << std::endl;
             std::cout << glCheckFramebufferStatus(GL_FRAMEBUFFER) << std::endl;
