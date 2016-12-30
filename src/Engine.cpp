@@ -1,5 +1,5 @@
 //
-// Created by niclas on 2016-10-21.
+// Created by Niclas Olmenius
 //
 
 #include "Engine.h"
@@ -36,20 +36,14 @@ namespace rengine {
         should_render_deferred_ = false;
         show_normals_ = 0;
 
-        if (!init_gl_context())
-            exit(EXIT_FAILURE);
+        bool success = init_gl_context();
+        assert(success);
 
-        if (!enable_gl_features())
-            exit(EXIT_FAILURE);
+        success = load_scene();
+        assert(success);
 
-        if (!load_scene())
-            exit(EXIT_FAILURE);
-
-        if (!setup_camera())
-            exit(EXIT_FAILURE);
-
-        if (!compile_shaders())
-            exit(EXIT_FAILURE);
+        success = setup_camera();
+        assert(success);
 
     }
 
@@ -83,7 +77,6 @@ namespace rengine {
         glfwSetWindowUserPointer(window_, this);
         glfwSetKeyCallback(window_, key_callback);
         glfwSetCursorPosCallback(window_, mouse_callback);
-        glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK) {
@@ -93,7 +86,6 @@ namespace rengine {
 
         printf("GL version:      %s\n", glGetString(GL_VERSION));
 
-
         ImGui_ImplGlfwGL3_Init(window_, true);
 
         glfwGetFramebufferSize(window_, &window_width_, &window_height_);
@@ -102,11 +94,6 @@ namespace rengine {
 
         return true;
 
-    }
-
-    bool Engine::enable_gl_features() {
-
-        return true;
     }
 
     bool Engine::load_scene() {
@@ -126,24 +113,21 @@ namespace rengine {
         return true;
     }
 
-    bool Engine::compile_shaders() {
-
-        return true;
-    }
 
     void Engine::run() {
 
-        // Create and compile shaders common shaders
+        // Create and compile common shaders
         const auto filter_shader = Shader{"../assets/shaders/gaussian_blur.vert",
                                           "../assets/shaders/gaussian_blur.frag"};
         const auto combine_bloom_shader = Shader{"../assets/shaders/bloom_combine.vert",
                                                  "../assets/shaders/bloom_combine.frag"};
 
+        // Forward shader
         const auto forward_shader = Shader{"../assets/shaders/forward.vert",
                                            "../assets/shaders/forward.frag"};
 
         // ------------------------------------------------------------------------------------
-        // Set up deferred stuff
+        // Deferred shaders
         const auto deferred_geometry_shader = Shader{"../assets/shaders/deferred_geometry.vert",
                                                      "../assets/shaders/deferred_geometry.frag"};
         const auto deferred_lighting_shader = Shader{"../assets/shaders/deferred_hdr_lighting.vert",
@@ -153,10 +137,9 @@ namespace rengine {
 
         // ------------------------------------------------------------------------------------
         // Set up the uniform transform block
-        GLuint ubo_transforms;
-        glGenBuffers(1, &ubo_transforms);
+        glGenBuffers(1, &ubo_transforms_);
 
-        glBindBuffer(GL_UNIFORM_BUFFER, ubo_transforms);
+        glBindBuffer(GL_UNIFORM_BUFFER, ubo_transforms_);
         glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
@@ -167,10 +150,10 @@ namespace rengine {
 
         glBindBuffer(GL_UNIFORM_BUFFER, lights_ubo_);
         glBufferData(GL_UNIFORM_BUFFER, nrOfLights_ * sizeof(Light), nullptr, GL_STREAM_DRAW);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
         setup_lights();
 
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 
         // ------------------------------------------------------------------------------------
@@ -193,8 +176,6 @@ namespace rengine {
         GLfloat delta_time = 0.0f;
         GLfloat last_frame_time = 0.0f;
 
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         while (!glfwWindowShouldClose(window_)) {
 
@@ -229,14 +210,14 @@ namespace rengine {
             // ------------------------------------------------------
             // RENDERING
             if (should_render_deferred_) {
-                render_deferred(deferred_geometry_shader, deferred_lighting_shader, ubo_transforms, render_fbo,
-                                gbuffer);
+                render_deferred(deferred_geometry_shader, deferred_lighting_shader, render_fbo, gbuffer);
             } else {
-                render_forward(forward_shader, ubo_transforms, render_fbo);
+                render_forward(forward_shader, render_fbo);
             }
 
             bloom_pass(render_fbo, filter_fbos, filter_shader, combine_bloom_shader);
 
+            // GUI
             ImGui::Render();
 
             // Swap the screen buffers
@@ -248,19 +229,18 @@ namespace rengine {
     }
 
     void
-    Engine::render_deferred(const Shader &geometry_shader, const Shader &lighting_shader, const GLuint ubo_transforms,
-                            const FBO &render_fbo, const GBuffer &gbuffer) const {
+    Engine::render_deferred(const Shader &geometry_shader, const Shader &lighting_shader, const FBO &render_fbo,
+                            const GBuffer &gbuffer) const {
 
         // Geometry pass
-        deferred_geometry_pass(geometry_shader, gbuffer, ubo_transforms);
+        deferred_geometry_pass(geometry_shader, gbuffer);
         // Lighting pass
         deferred_lighting_pass(lighting_shader, gbuffer, render_fbo);
 
     }
 
     void
-    Engine::render_forward(const Shader &forward_shader, const GLuint forward_ubo_transforms,
-                           const FBO &render_fbo) const {
+    Engine::render_forward(const Shader &forward_shader, const FBO &render_fbo) const {
 
         // Bind the render FBO for drawing
         render_fbo.bind();
@@ -278,22 +258,19 @@ namespace rengine {
         glUniform3fv(glGetUniformLocation(forward_shader.program_, "viewPos"), 1, glm::value_ptr(camera_.Position));
 
         glEnable(GL_DEPTH_TEST);
-//        glDepthFunc(GL_LEQUAL);
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
 
         const glm::mat4 model;
 
         // CAMERA
-        update_camera(forward_ubo_transforms, model);
+        update_camera(model);
 
         // Render the scene. (Also binds relevant textures)
         render_scene();
 
-
         glDisable(GL_CULL_FACE);
         glDisable(GL_DEPTH_TEST);
-
 
     }
 
@@ -306,8 +283,7 @@ namespace rengine {
     }
 
 
-    void Engine::deferred_geometry_pass(const Shader &g_geometry_shader, const GBuffer &gbuffer,
-                                        const GLuint ubo_transforms) const {
+    void Engine::deferred_geometry_pass(const Shader &g_geometry_shader, const GBuffer &gbuffer) const {
 
         gbuffer.bind_for_geometry_pass();
 
@@ -322,21 +298,13 @@ namespace rengine {
         g_geometry_shader.use();
 
         glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LEQUAL);
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
 
-
-        // Draw the loaded model
         const glm::mat4 model;
-//        model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
-//        model = glm::scale(model, glm::vec3(0.25f));    // It's a bit too big for our scene, so scale it down
-//        model = glm::rotate(model, 45.0f, glm::vec3{0.0f, 1.0f, 0.0f});
-//        glUniformMatrix4fv(glGetUniformLocation(g_geometry_shader.program_, "model"), 1, GL_FALSE,
-//                           glm::value_ptr(model));
 
         // CAMERA
-        update_camera(ubo_transforms, model);
+        update_camera(model);
 
         // Render the scene. (Also binds relevant textures)
         render_scene();
@@ -358,8 +326,6 @@ namespace rengine {
         glClearBufferfv(GL_COLOR, 0, black);
         glClearBufferfv(GL_COLOR, 1, black);
         glClearBufferfv(GL_DEPTH, 0, &float_ones);
-
-//        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         lighting_shader.use();
         gbuffer.bind_for_lighting_pass();
@@ -383,7 +349,6 @@ namespace rengine {
         //-----------------------------------------------
         // Filter
         shader_filter.use();
-        glUniform1i(glGetUniformLocation(shader_filter.program_, "hdr_image"), 0);
 
         glBindVertexArray(quad_.vao_); // Bind the quad's VAO
 
@@ -443,7 +408,7 @@ namespace rengine {
     }
 
 
-    void Engine::update_camera(GLuint ubo_transforms, const glm::mat4 &model) const {
+    void Engine::update_camera(const glm::mat4 &model) const {
 
         // Set up the projection matrix and feed the data to the uniform block object
         const glm::mat4 projection = glm::perspective(camera_.Zoom,
@@ -453,7 +418,7 @@ namespace rengine {
         // To the same for the view matrix
         const glm::mat4 view = camera_.GetViewMatrix();
 
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_transforms);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_transforms_);
         glm::mat4 *const matrices = reinterpret_cast<glm::mat4 *>(glMapBufferRange(GL_UNIFORM_BUFFER,
                                                                                    0,
                                                                                    2 * sizeof(glm::mat4),
@@ -504,9 +469,6 @@ namespace rengine {
                                           4 * light_quadratic_factor_ *
                                           (1.0f - threshold * max_brightness))) /
                                (2 * light_quadratic_factor_);
-
-//            lights[i].radius = 25.0f;
-//            lights[i].falloff = 0.15f;
         }
 
         glUnmapBuffer(GL_UNIFORM_BUFFER);

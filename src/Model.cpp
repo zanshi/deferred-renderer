@@ -1,5 +1,5 @@
 //
-// Created by Niclas Olmenius on 2016-10-27.
+// Created by Niclas Olmenius
 //
 
 
@@ -19,19 +19,16 @@ namespace rengine {
         for (const auto &mesh : meshes_) {
             mesh.draw();
         }
+        glBindVertexArray(0);
     }
 
     void Model::load_model(std::string path) {
 
         // Read file via ASSIMP
         Assimp::Importer importer;
-//        const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs |
-//                                                       aiProcess_CalcTangentSpace | aiProcess_GenNormals  );
 
-//        const aiScene *scene = aiImportFile(path.c_str(), aiProcessPreset_TargetRealtime_Fast);
         const aiScene *scene = importer.ReadFile(path, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_FlipUVs |
                                                        aiProcess_PreTransformVertices);
-//        const aiScene *scene = importer.ReadFile(path, aiProcess_FlipWindingOrder | aiProcess_CalcTangentSpace);
 
         // Check for errors
         if (!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
@@ -110,6 +107,7 @@ namespace rengine {
                                                                               "texture_specular");
             textures.insert(textures.end(), specular_maps.begin(), specular_maps.end());
 
+            // 3. Normal maps
             std::vector<Texture> normal_maps = load_material_textures(material, aiTextureType_NORMALS,
                                                                       "texture_normal");
             textures.insert(textures.end(), normal_maps.begin(), normal_maps.end());
@@ -147,7 +145,6 @@ namespace rengine {
             }
             if (!skip) {   // If texture hasn't been loaded already, load it
                 Texture texture;
-//                texture.id = TextureFromFile(str.C_Str(), this->directory_);
                 texture.id = (get_file_extension(str.C_Str()) == "dds") ? create_texture(str.C_Str()) : TextureFromFile(
                         str.C_Str(), this->directory_);
                 texture.type = type_name;
@@ -162,6 +159,7 @@ namespace rengine {
 
 
     /// Filename can be KTX or DDS files
+    // From GLI examples
     GLuint Model::create_texture(char const *Filename) {
         const std::string path = this->directory_ + std::string(Filename);
 
@@ -322,9 +320,6 @@ namespace rengine {
             default:
                 break;
         }
-
-        // TODO implement gamma support, linear color space etc
-//        format = GL_RGB;
 
         // Assign texture to ID
         glBindTexture(GL_TEXTURE_2D, textureID);

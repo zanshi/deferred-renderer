@@ -17,7 +17,7 @@ struct Light {
     uint pad3;
 };
 
-const int NR_LIGHTS = 64;
+const int NR_LIGHTS = 32;
 
 layout (std140, binding = 1) uniform light_block {
     Light lights[NR_LIGHTS];
@@ -58,10 +58,8 @@ void main()
     fragment_info_t fragment;
     unpackGBuffer(ivec2(gl_FragCoord.xy), fragment);
 
-
     // Then calculate lighting as usual
-        vec3 lighting  = fragment.color * 0.08; // hard-coded ambient component
-//    vec3 lighting  = vec3(0.0);
+    vec3 lighting  = fragment.color * 0.08; // hard-coded ambient component
     vec3 viewDir  = normalize(viewPos - fragment.ws_coord);
     for(int i = 0; i < NR_LIGHTS; ++i) {
         // Diffuse
@@ -85,9 +83,8 @@ void main()
         }
     }
 
-//    FragColor = vec4(lighting, 1.0);
-
     FragColor = vec4(mix(lighting, fragment.normal, showNormals),1.0);
+
 
     // ------------------------
     /// HDR and bloom

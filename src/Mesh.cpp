@@ -1,5 +1,5 @@
 //
-// Created by Niclas Olmenius on 2016-10-27.
+// Created by Niclas Olmenius
 //
 
 #include "Mesh.h"
@@ -51,36 +51,23 @@ namespace rengine {
 
     }
 
-// TODO improve performance
+
     void Mesh::draw() const {
-//        GLuint diffuseNr = 1;
-//        GLuint specularNr = 1;
-//        GLuint normalNr = 1;
+
+        // Right now I assume that every mesh has a diffuse, specular and normal texture
+        // diffuse idx = 0
+        // specular idx = 1
+        // normal idx = 2
         for (GLuint i = 0; i < textures_.size(); i++) {
             glActiveTexture(GL_TEXTURE0 + i); // Activate proper texture unit before binding
-//            // Retrieve texture number (the N in diffuse_textureN)
-//            std::stringstream ss;
-//            std::string number;
-//            std::string name = textures_[i].type;
-//            if (name == "texture_diffuse")
-//                ss << diffuseNr++; // Transfer GLuint to stream
-//            else if (name == "texture_specular")
-//                ss << specularNr++; // Transfer GLuint to stream
-//            else if (name == "texture_normal")
-//                ss << normalNr++;
-//            number = ss.str();
-//
-////            std::cout << (name + number).c_str() << ", i = " << i << std::endl;
-//
-////            glUniform1i(glGetUniformLocation(current_program, (name + number).c_str()), i);
-////            glUniform1i(i, (GLuint) (name + number).c_str());
             glBindTexture(GL_TEXTURE_2D, textures_[i].id);
         }
 
         // Draw mesh
+        // TODO Use packet buffers in the future
         glBindVertexArray(VAO_);
         glDrawElements(GL_TRIANGLES, indices_size_, GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
+
 
         // Always good practice to set everything back to defaults once configured.
         for (GLuint i = 0; i < textures_.size(); i++) {

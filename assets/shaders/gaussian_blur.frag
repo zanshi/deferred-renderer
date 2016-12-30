@@ -1,8 +1,8 @@
 #version 430 core
 
-uniform sampler2D hdr_image;
+layout (location = 0) out vec4 color;
 
-out vec4 color;
+layout(binding = 0) uniform sampler2D bright_image;
 
 // Weights for the Gaussian blur
 const float weights[] = float[](0.0024499299678342,
@@ -39,7 +39,7 @@ void main(void)
 
     for (i = 0; i < weights.length(); i++)
     {
-        c += texelFetch(hdr_image, P + ivec2(0, i), 0) * weights[i];
+        c += texelFetch(bright_image, P + ivec2(0, i), 0) * weights[i];
     }
 
     color = c;

@@ -1,5 +1,5 @@
 //
-// Created by niclas on 2016-10-21.
+// Created by Niclas Olmenius
 //
 
 #pragma once
@@ -45,8 +45,6 @@ namespace rengine {
 
         static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
-        // Keys for GLFW
-
 
     private:
 
@@ -76,44 +74,39 @@ namespace rengine {
 
         bool setup_camera();
 
+        GLuint ubo_transforms_;
+
         // Lights
         std::vector<Light> lights_;
-        Light * lights_gl_;
+        Light *lights_gl_;
         GLfloat light_linear_factor_;
         GLfloat light_quadratic_factor_;
         GLuint lights_ubo_;
-        const unsigned int nrOfLights_ = 64;
-
+        const unsigned int nrOfLights_ = 32;
 
         static GLuint show_normals_;
         static bool should_render_deferred_;
 
-
         Quad quad_;
-
 
         bool compile_shaders();
 
-        void render_forward(const Shader &forward_shader,
-                            const GLuint forward_ubo_transforms,
-                            const FBO &render_fbo) const;
+        void render_forward(const Shader &forward_shader, const FBO &render_fbo) const;
 
 
-        void render_deferred(const Shader &geometry_shader, const Shader &lighting_shader, const GLuint ubo_transforms,
-                                     const FBO &render_fbo, const GBuffer &gbuffer) const;
+        void render_deferred(const Shader &geometry_shader, const Shader &lighting_shader, const FBO &render_fbo,
+                             const GBuffer &gbuffer) const;
 
         void deferred_lighting_pass(const Shader &lighting_shader, const GBuffer &gbuffer, const FBO &render_fbo) const;
 
-        void deferred_geometry_pass(const Shader &g_geometry_shader,
-                                    const GBuffer &gbuffer,
-                                    const GLuint ubo_transforms) const;
+        void deferred_geometry_pass(const Shader &g_geometry_shader, const GBuffer &gbuffer) const;
 
         void bloom_pass(const FBO &render_fbo, const std::array<FBO, 2> &filter_fbos, const Shader &shader_filter,
-                                const Shader &shader_combine) const;
+                        const Shader &shader_combine) const;
 
         void handle_input(float delta_time);
 
-        void update_camera(GLuint ubo_transforms, const glm::mat4 &model) const;
+        void update_camera(const glm::mat4 &model) const;
 
         void update_lights(const Shader &shader) const;
 

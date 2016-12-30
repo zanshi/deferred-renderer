@@ -18,7 +18,7 @@ struct Light {
     uint pad3;
 };
 
-const int NR_LIGHTS = 64;
+const int NR_LIGHTS = 32;
 
 layout (std140, binding = 1) uniform light_block {
     Light lights[NR_LIGHTS];
@@ -45,8 +45,6 @@ void main() {
     vec3 N = normalize(fs_in.Normal);
     vec3 T = normalize(fs_in.Tangent);
     vec3 B = normalize(fs_in.BiTangent);
-//    vec3 B = normalize(cross(N, T));
-
     mat3 TBN = mat3(T,B,N);
     vec3 nm = texture(texture_normal1, fs_in.TexCoords).xyz * 2.0 - vec3(1.0);
     nm = TBN * normalize(nm);
@@ -55,8 +53,7 @@ void main() {
     float Specular = texture(texture_specular1, fs_in.TexCoords).r;
     vec3 Normal = normalize(nm);
 
-     vec3 lighting  = Diffuse * 0.08; // hard-coded ambient component
-//    vec3 lighting  = vec3(0.0);
+    vec3 lighting  = Diffuse * 0.08; // hard-coded ambient component
     vec3 viewDir  = normalize(viewPos - fs_in.FragPos);
     for(int i = 0; i < NR_LIGHTS; ++i) {
 
@@ -84,12 +81,10 @@ void main() {
 
     }
 
-    // FragColor = vec4(lighting, 1.0);
-
     FragColor = vec4(mix(lighting, Normal, showNormals),1.0);
 
     // ------------------------
-    /// HDR
+    /// HDR and bloom
 
     // Calculate luminance
     float Y = dot(lighting, vec3(0.299, 0.587, 0.144));
@@ -98,7 +93,5 @@ void main() {
     // the second output
     lighting = lighting * 4.0 * smoothstep(bloom_thresh_min, bloom_thresh_max, Y);
     BrightColor = vec4(lighting, 1.0);
-
-
 
 }
